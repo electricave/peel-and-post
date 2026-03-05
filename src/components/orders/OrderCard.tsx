@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { Order, Proof } from '@/types'
 import toast from 'react-hot-toast'
+import ArtworkUploader from '@/components/orders/ArtworkUploader';
 
 const STATUS_STYLES: Record<string, { label: string; bg: string; color: string }> = {
   pending:        { label: 'Pending',         bg: '#EDE7DC', color: '#7A5C48' },
@@ -32,8 +33,10 @@ const PRODUCT_EMOJI: Record<string, string> = {
   'Clear Stickers': '🔍',
 }
 
-export function OrderCard({ order, onProofAction, onMessage }: {
+export function OrderCard({ order, userId, isStudio, onProofAction, onMessage }: {
   order: Order
+  userId: string
+  isStudio: boolean
   onProofAction?: () => void
   onMessage?: () => void
 }) {
@@ -167,6 +170,13 @@ export function OrderCard({ order, onProofAction, onMessage }: {
             ) : (
               <div style={{ fontSize: '13px', color: 'var(--brown-light)', fontStyle: 'italic' }}>No proofs yet — the studio will share one shortly.</div>
             )}
+
+            {/* Artwork Uploader */}
+            <ArtworkUploader
+              orderId={order.id}
+              userId={userId}
+              isStudio={isStudio}
+            />
           </div>
 
           {/* Action buttons */}

@@ -24,6 +24,17 @@ export type NotificationType =
   | 'proof_approved'
   | 'shipped'
 
+export type ArtworkFile = {
+  id: string;
+  order_id: string;
+  user_id: string;
+  file_name: string;
+  file_path: string;
+  file_size: number | null;
+  mime_type: string | null;
+  created_at: string;
+};
+
 export interface Profile {
   id: string
   email: string

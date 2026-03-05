@@ -19,6 +19,8 @@ export default function OrdersClient({ profile, currentOrders, pastOrders, stats
   const router = useRouter()
 
   const orders = tab === 'current' ? currentOrders : pastOrders
+  const userId = profile?.id ?? ''
+  const isStudio = profile?.role === 'studio'
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
@@ -79,6 +81,8 @@ export default function OrdersClient({ profile, currentOrders, pastOrders, stats
               <OrderCard
                 key={order.id}
                 order={order}
+                userId={userId}
+                isStudio={isStudio}
                 onProofAction={() => router.refresh()}
                 onMessage={() => router.push('/messages')}
               />

@@ -1,5 +1,6 @@
 import { createClient } from './supabase/server'
-import type { Order, Proof, Conversation, Message, Notification, Profile } from '@/types'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Order, Proof, Conversation, Message, Notification, Profile, ArtworkFile } from '@/types'
 
 // ============================================================
 // PROFILE
@@ -286,4 +287,42 @@ export async function getDashboardStats() {
     proofsToReview: proofsRes.data?.length ?? 0,
     unreadMessages: messagesRes.data?.length ?? 0,
   }
+}
+
+// ============================================================
+// ARTWORK FILES
+// ============================================================
+
+export async function getArtworkFiles(supabase: SupabaseClient, orderId: string) {
+  const { data, error } = await supabase
+    .from('artwork_files')
+    .select('*')
+    .eq('order_id', orderId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data as ArtworkFile[]
+}
+
+export async function insertArtworkFile(
+  supabase: SupabaseClient,
+  record: Omit<ArtworkFile, 'id' | 'created_at'>
+) {
+  const { data, error } = await supabase
+    .from('artwork_files')
+    .insert(record)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data as ArtworkFile
+}
+
+export async function deleteArtworkFile(supabase: SupabaseClient, fileId: string) {
+  const { error } = await supabase
+    .from('artwork_files')
+    .delete()
+    .eq('id', fileId)
+
+  if (error) throw error
 }
