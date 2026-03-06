@@ -147,9 +147,9 @@ CLAUDE.md                                  # This file
 
 These features were identified during Phase 1 development and should be addressed before or during Phase 2.
 
-- [ ] **Forgot password** — No reset flow exists. Need: link on login page → `/auth/forgot-password` (email entry) → `/auth/reset-password` (token callback + new password). Use `supabase.auth.resetPasswordForEmail()`.
-- [ ] **Remove redundant `+ Upload Files` button** — `ArtworkUploader.tsx` header row has a `+ Upload Files` button that duplicates the drop zone. Remove the button, keep the drop zone.
-- [ ] **Studio proof upload UI** — `POST /api/proofs` is built and ready. No studio-facing UI exists yet. Need an upload section in `OrderCard` (visible only when `isStudio`) that uploads a file to Supabase Storage (`proofs` bucket) then calls the API to insert the proof record, set status to `proof_sent`, and trigger the customer email.
+- [x] **Forgot password** — Implemented. Link on login page → `/auth/forgot-password` (email entry) → `/auth/reset-password` (PKCE token callback + new password form). Uses `supabase.auth.resetPasswordForEmail()` and `onAuthStateChange('PASSWORD_RECOVERY')`.
+- [x] **Remove redundant `+ Upload Files` button** — Removed from `ArtworkUploader.tsx` header. Drop zone handles file selection.
+- [x] **Studio proof upload UI** — Drop zone added to `OrderCard` (studio only, hidden for shipped/delivered/cancelled). Uploads to `proofs` Supabase Storage bucket then calls `POST /api/proofs`. Customer notified via in-app notification + email on upload.
 - [ ] **Test email system end-to-end** — Emails have not been verified working. Studio should change an order status and confirm the customer receives the email. Check Resend sending domain config if not working.
 
 ---
