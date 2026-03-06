@@ -4,6 +4,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types'
 
+
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: '⊞', href: '/dashboard' },
   { id: 'orders',    label: 'My Orders',  icon: '◈', href: '/orders' },
@@ -12,6 +13,7 @@ const NAV_ITEMS = [
 
 const STUDIO_NAV_ITEMS = [
   { id: 'studio', label: 'Studio Dashboard', icon: '⚙', href: '/studio' },
+  { id: 'pricing', label: 'Pricing Rules',     icon: '◈', href: '/studio/pricing' },
 ]
 
 export default function Sidebar({

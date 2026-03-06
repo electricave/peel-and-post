@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 
 const TOTAL_STEPS = 7
@@ -16,10 +16,10 @@ const STEPS = {
 }
 
 const PRODUCTS = [
-  { value: 'Die-Cut Stickers',    emoji: '✂️', desc: 'Custom-shaped stickers cut to your exact design outline',     price: 'From $0.18 / sticker' },
-  { value: 'Kiss-Cut Sheets',     emoji: '📄', desc: 'Multiple stickers on a single backing sheet, easy to peel',  price: 'From $2.50 / sheet' },
-  { value: 'Holographic Stickers',emoji: '🌈', desc: 'Dazzling rainbow-shimmer foil finish on any shape',           price: 'From $0.35 / sticker' },
-  { value: 'Clear Stickers',      emoji: '🔍', desc: 'Transparent background for a no-label, printed-on look',      price: 'From $0.22 / sticker' },
+  { value: 'Die-Cut Stickers',     emoji: '✂️', desc: 'Custom-shaped stickers cut to your exact design outline',    price: 'From $0.18 / sticker' },
+  { value: 'Kiss-Cut Sheets',      emoji: '📄', desc: 'Multiple stickers on a single backing sheet, easy to peel', price: 'From $2.50 / sheet' },
+  { value: 'Holographic Stickers', emoji: '🌈', desc: 'Dazzling rainbow-shimmer foil finish on any shape',          price: 'From $0.35 / sticker' },
+  { value: 'Clear Stickers',       emoji: '🔍', desc: 'Transparent background for a no-label, printed-on look',     price: 'From $0.22 / sticker' },
 ]
 
 const QUANTITIES = [
@@ -50,16 +50,44 @@ const SHAPES = [
 ]
 
 const TURNAROUNDS = [
-  { value: 'Standard (7–10 days)',   emoji: '📅', desc: '7–10 business days — the most economical option',                    price: 'No surcharge' },
-  { value: 'Rush (3–5 days)',        emoji: '⚡', desc: '3–5 business days — for tight deadlines and upcoming events',        price: '+20% surcharge' },
-  { value: 'Super Rush (1–2 days)',  emoji: '🚀', desc: '1–2 business days — fastest available, subject to capacity',        price: '+40% surcharge' },
+  { value: 'Standard (7–10 days)',  emoji: '📅', desc: '7–10 business days — the most economical option',                price: 'No surcharge' },
+  { value: 'Rush (3–5 days)',       emoji: '⚡', desc: '3–5 business days — for tight deadlines and upcoming events',   price: '+20% surcharge' },
+  { value: 'Super Rush (1–2 days)', emoji: '🚀', desc: '1–2 business days — fastest available, subject to capacity',   price: '+40% surcharge' },
 ]
 
+// Maps display values → API slugs
+const PRODUCT_SLUG_MAP: Record<string, string> = {
+  'Die-Cut Stickers':     'die-cut',
+  'Kiss-Cut Sheets':      'kiss-cut',
+  'Holographic Stickers': 'holographic',
+  'Clear Stickers':       'die-cut',
+}
+
+const FINISH_SLUG_MAP: Record<string, string> = {
+  'Glossy': 'gloss',
+  'Matte':  'matte',
+}
+
+const RUSH_SLUG_MAP: Record<string, string> = {
+  'Standard (7–10 days)':  'standard',
+  'Rush (3–5 days)':       'rush',
+  'Super Rush (1–2 days)': 'super-rush',
+}
+
+// Fallback prices if API is unavailable
 const PRICES: Record<string, number> = {
-  'Die-Cut Stickers': 0.18,
-  'Kiss-Cut Sheets': 2.50,
+  'Die-Cut Stickers':     0.18,
+  'Kiss-Cut Sheets':      2.50,
   'Holographic Stickers': 0.35,
-  'Clear Stickers': 0.22,
+  'Clear Stickers':       0.22,
+}
+
+interface LiveQuote {
+  finalTotal: number
+  finalPricePerUnit: number
+  quantityDiscountPercent: number
+  rushSurchargePercent: number
+  subtotal: number
 }
 
 interface OrderState {
@@ -68,7 +96,11 @@ interface OrderState {
   shape: string; turnaround: string; notes: string
 }
 
-const EMPTY: OrderState = { product: '', quantity: '', customQty: '', finish: '', size: '', customSize: '', shape: '', turnaround: '', notes: '' }
+const EMPTY: OrderState = {
+  product: '', quantity: '', customQty: '',
+  finish: '', size: '', customSize: '',
+  shape: '', turnaround: '', notes: '',
+}
 
 export default function NewOrderModal({ open, onClose, onSuccess }: {
   open: boolean
@@ -78,6 +110,34 @@ export default function NewOrderModal({ open, onClose, onSuccess }: {
   const [step, setStep] = useState(1)
   const [state, setState] = useState<OrderState>(EMPTY)
   const [submitting, setSubmitting] = useState(false)
+  const [liveQuote, setLiveQuote] = useState<LiveQuote | null>(null)
+  const [quoteLoading, setQuoteLoading] = useState(false)
+
+  // Fetch live price quote when customer reaches the review step
+  useEffect(() => {
+    if (step !== 7) return
+
+    const qty = state.quantity === 'custom' ? Number(state.customQty) : Number(state.quantity)
+    const size = state.size === 'custom' ? state.customSize : state.size
+    const productSlug = PRODUCT_SLUG_MAP[state.product]
+    const finishSlug  = FINISH_SLUG_MAP[state.finish]
+    const rushSlug    = RUSH_SLUG_MAP[state.turnaround]
+
+    if (!productSlug || !finishSlug || !rushSlug || !size || !qty) return
+
+    setQuoteLoading(true)
+    setLiveQuote(null)
+
+    fetch('/api/pricing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productSlug, finishSlug, sizeLabel: size, quantity: qty, rushSlug }),
+    })
+      .then(r => r.json())
+      .then(d => { if (d.breakdown) setLiveQuote(d.breakdown) })
+      .catch(() => {})
+      .finally(() => setQuoteLoading(false))
+  }, [step])
 
   function set(key: keyof OrderState, value: string) {
     setState(prev => ({ ...prev, [key]: value }))
@@ -99,6 +159,7 @@ export default function NewOrderModal({ open, onClose, onSuccess }: {
     setTimeout(() => setStep(s => s + 1), 260)
   }
 
+  // Fallback estimate used only if live quote is unavailable
   function getEstimate() {
     const qty = state.quantity === 'custom' ? Number(state.customQty) : Number(state.quantity)
     let total = (PRICES[state.product] ?? 0.20) * qty
@@ -124,6 +185,7 @@ export default function NewOrderModal({ open, onClose, onSuccess }: {
           shape: state.shape,
           turnaround: state.turnaround,
           notes: state.notes || undefined,
+          estimated_total: liveQuote?.finalTotal ?? null,
         }),
       })
 
@@ -141,7 +203,7 @@ export default function NewOrderModal({ open, onClose, onSuccess }: {
 
   function handleClose() {
     onClose()
-    setTimeout(() => { setStep(1); setState(EMPTY) }, 300)
+    setTimeout(() => { setStep(1); setState(EMPTY); setLiveQuote(null) }, 300)
   }
 
   if (!open) return null
@@ -185,7 +247,6 @@ export default function NewOrderModal({ open, onClose, onSuccess }: {
 
         {/* Body */}
         <div style={{ padding: '24px 28px', flex: 1 }}>
-          {/* Steps 1-6: option grids */}
           {step === 1 && <OptionGrid options={PRODUCTS} onSelect={v => selectAndAdvance('product', v)} selected={state.product} />}
           {step === 2 && (
             <div>
@@ -235,11 +296,11 @@ export default function NewOrderModal({ open, onClose, onSuccess }: {
               <div style={{ background: 'var(--cream)', borderRadius: '12px', border: '1px solid var(--cream-dark)', padding: '20px', marginBottom: '16px' }}>
                 <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'var(--brown-light)', marginBottom: '14px' }}>Order Summary</div>
                 {[
-                  ['Product', state.product],
-                  ['Quantity', state.quantity === 'custom' ? state.customQty : state.quantity],
-                  ['Finish', state.finish],
-                  ['Size', state.size === 'custom' ? state.customSize : state.size],
-                  ['Shape', state.shape],
+                  ['Product',    state.product],
+                  ['Quantity',   state.quantity === 'custom' ? state.customQty : state.quantity],
+                  ['Finish',     state.finish],
+                  ['Size',       state.size === 'custom' ? state.customSize : state.size],
+                  ['Shape',      state.shape],
                   ['Turnaround', state.turnaround],
                 ].map(([label, value]) => (
                   <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid var(--cream-dark)', fontSize: '13px' }}>
@@ -247,14 +308,43 @@ export default function NewOrderModal({ open, onClose, onSuccess }: {
                     <span style={{ fontWeight: 700 }}>{value || '—'}</span>
                   </div>
                 ))}
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0 0', fontSize: '14px' }}>
+
+                {/* Estimated total */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '10px 0 0', fontSize: '14px' }}>
                   <span style={{ fontWeight: 700 }}>Estimated Total</span>
-                  <span style={{ fontFamily: "'Playfair Display', serif", fontSize: '18px', color: 'var(--terracotta)', fontWeight: 700 }}>{getEstimate()}</span>
+                  <span style={{ fontFamily: "'Playfair Display', serif", fontSize: '18px', color: 'var(--terracotta)', fontWeight: 700 }}>
+                    {quoteLoading
+                      ? 'Calculating…'
+                      : liveQuote
+                        ? `$${liveQuote.finalTotal.toFixed(2)}`
+                        : getEstimate()}
+                  </span>
                 </div>
+
+                {/* Live quote breakdown */}
+                {liveQuote && (
+                  <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    {liveQuote.quantityDiscountPercent > 0 && (
+                      <div style={{ fontSize: '11px', color: 'var(--sage)', fontWeight: 600, textAlign: 'right' }}>
+                        Includes {liveQuote.quantityDiscountPercent}% quantity discount
+                      </div>
+                    )}
+                    {liveQuote.rushSurchargePercent > 0 && (
+                      <div style={{ fontSize: '11px', color: 'var(--brown-light)', textAlign: 'right' }}>
+                        Includes +{liveQuote.rushSurchargePercent}% rush surcharge
+                      </div>
+                    )}
+                    <div style={{ fontSize: '11px', color: 'var(--brown-light)', textAlign: 'right' }}>
+                      ${liveQuote.finalPricePerUnit.toFixed(4)} per unit
+                    </div>
+                  </div>
+                )}
               </div>
+
               <div style={{ fontSize: '12px', color: 'var(--brown-light)', lineHeight: 1.6, padding: '12px 14px', background: 'var(--sage-pale)', borderRadius: '8px', borderLeft: '3px solid var(--sage)', marginBottom: '16px' }}>
                 ✦ This is an estimate only. Peel & Post Studio will confirm final pricing after reviewing your artwork. You'll receive a proof before any charge is made.
               </div>
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--brown-light)' }}>Any notes for the studio?</label>
                 <textarea
