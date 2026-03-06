@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
 
 export default async function SuccessPage({
   searchParams,
@@ -103,10 +102,10 @@ export default async function SuccessPage({
                 #{order.id.slice(0, 8).toUpperCase()}
               </span>
             </div>
-            {order.product_type && (
+            {order.product && (
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <span style={{ fontSize: '14px', color: '#4A3728' }}>Product</span>
-                <span style={{ fontSize: '14px', color: '#4A3728' }}>{order.product_type}</span>
+                <span style={{ fontSize: '14px', color: '#4A3728' }}>{order.product}</span>
               </div>
             )}
             {order.quantity && (
@@ -115,18 +114,18 @@ export default async function SuccessPage({
                 <span style={{ fontSize: '14px', color: '#4A3728' }}>{order.quantity}</span>
               </div>
             )}
-            {order.total_price && (
+            {(order.final_total ?? order.estimated_total) && (
               <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #EDE7DC', paddingTop: '8px', marginTop: '8px' }}>
                 <span style={{ fontSize: '14px', fontWeight: '700', color: '#4A3728' }}>Total paid</span>
                 <span style={{ fontSize: '14px', fontWeight: '700', color: '#4A3728' }}>
-                  ${Number(order.total_price).toFixed(2)}
+                  ${Number(order.final_total ?? order.estimated_total).toFixed(2)}
                 </span>
               </div>
             )}
           </div>
         )}
 
-        <Link href="/orders" style={{
+        <a href="/orders" style={{
           display: 'inline-block',
           backgroundColor: '#C4714A',
           color: '#fff',
@@ -139,7 +138,7 @@ export default async function SuccessPage({
           textTransform: 'uppercase',
         }}>
           View My Orders
-        </Link>
+        </a>
       </div>
     </div>
   )

@@ -102,6 +102,7 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage }:
 
   const emoji = PRODUCT_EMOJI[order.product] ?? '🏷️'
   const showPayNow = !isStudio && order.status === 'proof_approved' && order.final_total
+  const showPaidBanner = !isStudio && (order.status === 'paid' || order.status === 'in_production')
 
   return (
     <div style={{ background: 'var(--white)', borderRadius: '14px', border: '1px solid var(--cream-dark)', boxShadow: 'var(--shadow-card)', marginBottom: '12px', overflow: 'hidden', transition: 'box-shadow 0.2s' }}>
@@ -127,6 +128,12 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage }:
           {showPayNow && (
             <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: '#F2E0D5', color: '#C4714A', whiteSpace: 'nowrap' }}>
               💳 Payment Due
+            </span>
+          )}
+          {/* Paid / in production badge in summary row */}
+          {showPaidBanner && (
+            <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: '#E8EDE4', color: '#7A8C6E', whiteSpace: 'nowrap' }}>
+              ✓ Paid
             </span>
           )}
           <StatusPill status={order.status} />
@@ -192,6 +199,43 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage }:
                 >
                   {checkingOut ? 'Redirecting…' : '💳 Pay Now'}
                 </button>
+              </div>
+            )}
+
+            {/* Paid / in production confirmation banner */}
+            {showPaidBanner && (
+              <div style={{
+                background: 'linear-gradient(135deg, #EFF4EB, #E4EDE0)',
+                border: '1.5px solid #B2C9A4',
+                borderRadius: '12px',
+                padding: '20px 24px',
+                marginBottom: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+              }}>
+                <div style={{
+                  width: '40px', height: '40px', borderRadius: '50%',
+                  background: '#7A8C6E', display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', flexShrink: 0,
+                }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: '#7A8C6E', marginBottom: '4px' }}>
+                    Payment Confirmed
+                  </div>
+                  <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '16px', fontWeight: 700, color: '#4A3728' }}>
+                    {order.status === 'in_production' ? 'Your stickers are in production' : 'Payment received — heading to production'}
+                  </div>
+                  {order.final_total && (
+                    <div style={{ fontSize: '12px', color: '#7A8C6E', marginTop: '2px' }}>
+                      ${Number(order.final_total).toFixed(2)} paid · We'll notify you when your order ships
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
