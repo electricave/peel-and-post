@@ -10,10 +10,6 @@ const NAV_ITEMS = [
   { id: 'messages',  label: 'Messages',   icon: '◎', href: '/messages' },
 ]
 
-const STUDIO_NAV_ITEMS = [
-  { id: 'studio', label: 'Studio Dashboard', icon: '⚙', href: '/studio' },
-]
-
 export default function Sidebar({
   profile,
   unreadMessages = 0,
@@ -27,8 +23,6 @@ export default function Sidebar({
   const router = useRouter()
   const supabase = createClient()
 
-  const isStudio = profile?.role === 'studio'
-
   async function handleSignOut() {
     await supabase.auth.signOut()
     router.push('/auth/login')
@@ -38,45 +32,6 @@ export default function Sidebar({
   const badges: Record<string, number> = {
     orders: pendingProofs,
     messages: unreadMessages,
-  }
-
-  function NavItem({ item, badge }: { item: typeof NAV_ITEMS[0], badge?: number }) {
-    const isActive = pathname.startsWith(item.href)
-    return (
-      <div
-        onClick={() => router.push(item.href)}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          padding: '10px 12px',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          color: isActive ? 'white' : 'rgba(247,243,238,0.6)',
-          background: isActive ? 'var(--terracotta)' : 'transparent',
-          fontWeight: isActive ? 700 : 400,
-          fontSize: '14px',
-          transition: 'all 0.2s',
-          marginBottom: '2px',
-        }}
-      >
-        <span style={{ width: '18px', textAlign: 'center', fontSize: '16px', flexShrink: 0 }}>{item.icon}</span>
-        {item.label}
-        {badge != null && badge > 0 && (
-          <span style={{
-            marginLeft: 'auto',
-            background: isActive ? 'rgba(255,255,255,0.3)' : 'var(--gold)',
-            color: isActive ? 'white' : 'var(--brown)',
-            fontSize: '10px',
-            fontWeight: 700,
-            padding: '2px 7px',
-            borderRadius: '10px',
-          }}>
-            {badge}
-          </span>
-        )}
-      </div>
-    )
   }
 
   return (
@@ -122,27 +77,49 @@ export default function Sidebar({
 
       {/* Nav */}
       <nav style={{ padding: '8px 12px', flex: 1 }}>
-
-        {/* Studio section — only visible to studio role */}
-        {isStudio && (
-          <>
-            <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'var(--brown-light)', padding: '16px 12px 8px' }}>
-              Studio
-            </div>
-            {STUDIO_NAV_ITEMS.map(item => (
-              <NavItem key={item.id} item={item} />
-            ))}
-            <div style={{ margin: '12px 12px 0', borderTop: '1px solid rgba(255,255,255,0.08)' }} />
-          </>
-        )}
-
-        {/* Customer section */}
         <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'var(--brown-light)', padding: '16px 12px 8px' }}>
           My Portal
         </div>
-        {NAV_ITEMS.map(item => (
-          <NavItem key={item.id} item={item} badge={badges[item.id]} />
-        ))}
+        {NAV_ITEMS.map(item => {
+          const isActive = pathname.startsWith(item.href)
+          const badge = badges[item.id]
+          return (
+            <div
+              key={item.id}
+              onClick={() => router.push(item.href)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                color: isActive ? 'white' : 'rgba(247,243,238,0.6)',
+                background: isActive ? 'var(--terracotta)' : 'transparent',
+                fontWeight: isActive ? 700 : 400,
+                fontSize: '14px',
+                transition: 'all 0.2s',
+                marginBottom: '2px',
+              }}
+            >
+              <span style={{ width: '18px', textAlign: 'center', fontSize: '16px', flexShrink: 0 }}>{item.icon}</span>
+              {item.label}
+              {badge > 0 && (
+                <span style={{
+                  marginLeft: 'auto',
+                  background: isActive ? 'rgba(255,255,255,0.3)' : 'var(--gold)',
+                  color: isActive ? 'white' : 'var(--brown)',
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  padding: '2px 7px',
+                  borderRadius: '10px',
+                }}>
+                  {badge}
+                </span>
+              )}
+            </div>
+          )
+        })}
       </nav>
 
       {/* User footer */}
