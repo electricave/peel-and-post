@@ -326,3 +326,39 @@ export async function deleteArtworkFile(supabase: SupabaseClient, fileId: string
 
   if (error) throw error
 }
+
+// ============================================================
+// INVOICE
+// ============================================================
+
+export async function getOrderForInvoice(supabase: SupabaseClient, orderId: string) {
+  const { data, error } = await supabase
+    .from('orders')
+    .select(`
+      id,
+      order_number,
+      created_at,
+      status,
+      product,
+      quantity,
+      finish,
+      size,
+      shape,
+      turnaround,
+      notes,
+      estimated_total,
+      final_total,
+      paid_at,
+      customer_id,
+      profiles:customer_id (
+        full_name,
+        email,
+        company_name
+      )
+    `)
+    .eq('id', orderId)
+    .single()
+
+  if (error) throw error
+  return data as Order & { profiles: Profile | null }
+}

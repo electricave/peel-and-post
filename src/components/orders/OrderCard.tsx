@@ -265,6 +265,13 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage }:
                 📦 Track Shipment
               </button>
             )}
+            <a
+              href={`/orders/${order.id}/invoice`}
+              onClick={(e) => e.stopPropagation()}
+              style={{ padding: '9px 18px', borderRadius: '8px', background: 'transparent', border: '1.5px solid var(--cream-dark)', color: 'var(--brown-mid)', fontSize: '13px', fontWeight: 700, cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            >
+              🧾 View Invoice
+            </a>
           </div>
         </div>
       )}
