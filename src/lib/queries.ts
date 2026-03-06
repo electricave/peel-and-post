@@ -360,5 +360,5 @@ export async function getOrderForInvoice(supabase: SupabaseClient, orderId: stri
     .single()
 
   if (error) throw error
-  return data as Order & { profiles: Profile | null }
+  return data as unknown as Order & { profiles: Profile | null }
 }
