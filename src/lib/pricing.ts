@@ -34,6 +34,7 @@ export interface ProductType {
   name: string;
   base_price_per_unit: number;
   min_quantity: number;
+  active?: boolean;
 }
 
 export interface FinishVariant {
