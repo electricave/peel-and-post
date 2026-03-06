@@ -114,10 +114,7 @@ export default function ArtworkUploader({
   return (
     <div style={{ marginTop: 20 }}>
       {/* Section label */}
-      <div style={{
-        display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between', marginBottom: 12,
-      }}>
+      <div style={{ marginBottom: 12 }}>
         <span style={{
           fontSize: 10, fontWeight: 700, letterSpacing: '2px',
           textTransform: 'uppercase', color: 'var(--brown-light)',
@@ -125,20 +122,6 @@ export default function ArtworkUploader({
         }}>
           Artwork Files
         </span>
-        {!isStudio && (
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            style={{
-              fontSize: 12, fontWeight: 700, fontFamily: 'Lato, sans-serif',
-              color: uploading ? 'var(--brown-light)' : 'var(--terracotta)',
-              background: 'none', border: 'none', cursor: uploading ? 'default' : 'pointer',
-              padding: 0, letterSpacing: '0.5px',
-            }}
-          >
-            {uploading ? 'Uploading…' : '+ Upload Files'}
-          </button>
-        )}
       </div>
 
       {/* Artwork guidelines — only for customers */}
