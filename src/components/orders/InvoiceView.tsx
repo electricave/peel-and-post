@@ -30,9 +30,9 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled:      '#B03030',
 }
 
-function formatCurrency(cents: number | null): string {
-  if (cents == null) return '—'
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100)
+function formatCurrency(amount: number | null): string {
+  if (amount == null) return '—'
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
 }
 
 function formatDate(iso: string): string {
