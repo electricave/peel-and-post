@@ -41,6 +41,7 @@ const STATUS_CONFIG: Record<OrderStatus, { label: string; color: string; bg: str
   in_review:        { label: 'In Review',         color: '#C9A84C', bg: '#FDF6E3' },
   proof_sent:       { label: 'Proof Sent',        color: '#C4714A', bg: '#F2E0D5' },
   proof_approved:   { label: 'Proof Approved',    color: '#7A8C6E', bg: '#E8EDE4' },
+  paid:             { label: 'Paid',              color: '#7A8C6E', bg: '#E8EDE4' },
   in_production:    { label: 'In Production',     color: '#4A3728', bg: '#EDE7DC' },
   shipped:          { label: 'Shipped',           color: '#7A8C6E', bg: '#E8EDE4' },
   delivered:        { label: 'Delivered',         color: '#7A8C6E', bg: '#E8EDE4' },
