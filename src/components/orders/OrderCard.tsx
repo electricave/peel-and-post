@@ -101,7 +101,7 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage }:
   }
 
   const emoji = PRODUCT_EMOJI[order.product] ?? '🏷️'
-  const showPayNow = !isStudio && order.status === 'proof_approved' && order.total_price
+  const showPayNow = !isStudio && order.status === 'proof_approved' && order.final_total
 
   return (
     <div style={{ background: 'var(--white)', borderRadius: '14px', border: '1px solid var(--cream-dark)', boxShadow: 'var(--shadow-card)', marginBottom: '12px', overflow: 'hidden', transition: 'box-shadow 0.2s' }}>
@@ -166,7 +166,7 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage }:
                     Ready for Payment
                   </div>
                   <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', fontWeight: 700, color: '#4A3728' }}>
-                    ${Number(order.total_price).toFixed(2)}
+                    ${Number(order.final_total).toFixed(2)}
                   </div>
                   <div style={{ fontSize: '12px', color: '#A8896E', marginTop: '2px' }}>
                     Your proof has been approved — pay to start production
