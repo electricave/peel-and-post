@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
+import { sendStatusEmail } from '@/lib/email'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2026-02-25.clover',
@@ -54,6 +55,20 @@ export async function POST(req: NextRequest) {
         updated_at: new Date().toISOString(),
       })
       .eq('stripe_session_id', session.id)
+
+    // Send payment confirmation email
+    const { data: order } = await supabase
+      .from('orders')
+      .select('*, profiles:customer_id(full_name, email)')
+      .eq('id', orderId)
+      .single()
+
+    if (order) {
+      const customer = (order as any).profiles
+      if (customer) {
+        await sendStatusEmail('paid', order, customer)
+      }
+    }
   }
 
   if (event.type === 'checkout.session.expired') {

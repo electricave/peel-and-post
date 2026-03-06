@@ -177,14 +177,16 @@ export default function StudioDashboardClient({
   })
 
   // ── Helpers ────────────────────────────────────────────────
-  async function updateStatus(orderId: string, newStatus: OrderStatus) {
+  async function updateStatus(orderId: string, newStatus: OrderStatus, trackingNumber?: string) {
     setUpdatingOrder(orderId)
     setStatusDropdownOpen(null)
-    const { error } = await supabase
-      .from('orders')
-      .update({ status: newStatus })
-      .eq('id', orderId)
-    if (!error) {
+    // Route through API so status-change emails are triggered
+    const res = await fetch('/api/orders', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order_id: orderId, status: newStatus, tracking_number: trackingNumber }),
+    })
+    if (res.ok) {
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o))
     }
     setUpdatingOrder(null)

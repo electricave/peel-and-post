@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { sendStatusEmail } from '@/lib/email'
 
 // GET /api/proofs?orderId=xxx
 export async function GET(request: NextRequest) {
@@ -82,7 +83,106 @@ export async function PATCH(request: NextRequest) {
         body: notifBody,
         order_id: proof.order_id,
       })
+
+    // Fetch customer profile for email
+    const { data: customer } = await supabase
+      .from('profiles')
+      .select('full_name, email')
+      .eq('id', order.customer_id)
+      .single()
+
+    if (customer) {
+      // proof_approved / revision_requested both email the studio; customer gets notified in-app
+      await sendStatusEmail(
+        action === 'approved' ? 'proof_approved' : 'revision_requested',
+        { ...order, id: proof.order_id } as any,
+        customer
+      )
+    }
   }
 
   return NextResponse.json({ success: true })
+}
+
+// POST /api/proofs — studio uploads a new proof, triggers proof_sent email to customer
+export async function POST(request: NextRequest) {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // Studio only
+  const { data: studioProfile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  if (studioProfile?.role !== 'studio') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const body = await request.json()
+  const { order_id, file_url, file_name, file_size } = body
+
+  if (!order_id || !file_url || !file_name) {
+    return NextResponse.json({ error: 'order_id, file_url, and file_name required' }, { status: 400 })
+  }
+
+  // Get next version number
+  const { data: existing } = await supabase
+    .from('proofs')
+    .select('version')
+    .eq('order_id', order_id)
+    .order('version', { ascending: false })
+    .limit(1)
+
+  const nextVersion = (existing?.[0]?.version ?? 0) + 1
+
+  const { data: proof, error } = await supabase
+    .from('proofs')
+    .insert({
+      order_id,
+      file_url,
+      file_name,
+      file_size: file_size ?? null,
+      version: nextVersion,
+      status: 'pending',
+      uploaded_by: user.id,
+    })
+    .select()
+    .single()
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Update order status to proof_sent
+  await supabase
+    .from('orders')
+    .update({ status: 'proof_sent' })
+    .eq('id', order_id)
+
+  // Fetch order + customer for notification and email
+  const { data: order } = await supabase
+    .from('orders')
+    .select('*, profiles:customer_id(full_name, email)')
+    .eq('id', order_id)
+    .single()
+
+  if (order) {
+    const customer = (order as any).profiles
+
+    // In-app notification
+    await supabase.from('notifications').insert({
+      user_id: order.customer_id,
+      type: 'proof_ready',
+      title: 'Your proof is ready to review',
+      body: `Version ${nextVersion} of your ${order.product} proof is ready.`,
+      order_id,
+    })
+
+    // Email
+    if (customer) {
+      await sendStatusEmail('proof_sent', order, customer)
+    }
+  }
+
+  return NextResponse.json({ data: proof }, { status: 201 })
 }
