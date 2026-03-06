@@ -115,7 +115,37 @@ export default function LoginPage() {
             </>
           )}
           <Field label="Email" type="email" value={email} onChange={setEmail} placeholder="you@company.com" />
-          <Field label="Password" type="password" value={password} onChange={setPassword} placeholder="••••••••" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', color: '#A8896E' }}>
+                Password
+              </label>
+              {mode === 'login' && (
+                <a href="/auth/forgot-password" style={{ fontSize: '11px', color: '#C4714A', fontWeight: 700, textDecoration: 'none' }}>
+                  Forgot password?
+                </a>
+              )}
+            </div>
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              style={{
+                padding: '10px 14px',
+                borderRadius: '10px',
+                border: '1.5px solid #EDE7DC',
+                background: '#F7F3EE',
+                fontFamily: "'Lato', sans-serif",
+                fontSize: '14px',
+                color: '#4A3728',
+                outline: 'none',
+                width: '100%',
+                boxSizing: 'border-box',
+              }}
+            />
+          </div>
 
           <button
             type="submit"
