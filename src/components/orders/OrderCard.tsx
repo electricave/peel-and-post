@@ -11,6 +11,7 @@ const STATUS_STYLES: Record<string, { label: string; bg: string; color: string }
   in_review:      { label: 'In Review',       bg: '#FEF3CD', color: '#7A5C00' },
   proof_sent:     { label: 'Proof Review',    bg: '#FEF3CD', color: '#7A5C00' },
   proof_approved: { label: 'Approved',        bg: '#E8EDE4', color: '#7A8C6E' },
+  paid:           { label: 'Paid',            bg: '#E8EDE4', color: '#7A8C6E' },
   in_production:  { label: 'In Production',   bg: '#F2E0D5', color: '#C4714A' },
   shipped:        { label: 'Shipped',         bg: '#E8EDE4', color: '#7A8C6E' },
   delivered:      { label: 'Delivered',       bg: '#E8EDE4', color: '#7A8C6E' },
@@ -45,6 +46,7 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage }:
   const [loadingProofs, setLoadingProofs] = useState(false)
   const [reviewingProof, setReviewingProof] = useState<string | null>(null)
   const [feedback, setFeedback] = useState('')
+  const [checkingOut, setCheckingOut] = useState(false)
 
   async function loadProofs() {
     if (proofs.length > 0) return
@@ -81,7 +83,25 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage }:
     }
   }
 
+  async function handlePayNow() {
+    setCheckingOut(true)
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: order.id }),
+      })
+      const { url, error } = await res.json()
+      if (error) throw new Error(error)
+      window.location.href = url
+    } catch (err: any) {
+      toast.error(err.message || 'Could not start checkout')
+      setCheckingOut(false)
+    }
+  }
+
   const emoji = PRODUCT_EMOJI[order.product] ?? '🏷️'
+  const showPayNow = !isStudio && order.status === 'proof_approved' && order.total_price
 
   return (
     <div style={{ background: 'var(--white)', borderRadius: '14px', border: '1px solid var(--cream-dark)', boxShadow: 'var(--shadow-card)', marginBottom: '12px', overflow: 'hidden', transition: 'box-shadow 0.2s' }}>
@@ -103,6 +123,12 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage }:
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+          {/* Pay Now badge in summary row */}
+          {showPayNow && (
+            <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: '#F2E0D5', color: '#C4714A', whiteSpace: 'nowrap' }}>
+              💳 Payment Due
+            </span>
+          )}
           <StatusPill status={order.status} />
           <span style={{ fontSize: '11px', color: 'var(--brown-light)', transition: 'transform 0.25s', display: 'inline-block', transform: open ? 'rotate(180deg)' : 'none' }}>▼</span>
         </div>
@@ -121,6 +147,53 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage }:
                 </div>
               ))}
             </div>
+
+            {/* Pay Now banner */}
+            {showPayNow && (
+              <div style={{
+                background: 'linear-gradient(135deg, #FDF4EF, #F9EBE2)',
+                border: '1.5px solid #E8B99A',
+                borderRadius: '12px',
+                padding: '20px 24px',
+                marginBottom: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '16px',
+              }}>
+                <div>
+                  <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: '#C4714A', marginBottom: '4px' }}>
+                    Ready for Payment
+                  </div>
+                  <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', fontWeight: 700, color: '#4A3728' }}>
+                    ${Number(order.total_price).toFixed(2)}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#A8896E', marginTop: '2px' }}>
+                    Your proof has been approved — pay to start production
+                  </div>
+                </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handlePayNow() }}
+                  disabled={checkingOut}
+                  style={{
+                    padding: '12px 28px',
+                    borderRadius: '8px',
+                    background: checkingOut ? '#E8B99A' : '#C4714A',
+                    color: 'white',
+                    border: 'none',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    letterSpacing: '1px',
+                    textTransform: 'uppercase',
+                    cursor: checkingOut ? 'not-allowed' : 'pointer',
+                    whiteSpace: 'nowrap',
+                    transition: 'background 0.2s',
+                  }}
+                >
+                  {checkingOut ? 'Redirecting…' : '💳 Pay Now'}
+                </button>
+              </div>
+            )}
 
             {/* Proofs */}
             {loadingProofs ? (
