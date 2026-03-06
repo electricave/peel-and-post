@@ -23,11 +23,10 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (error || !order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
-  if (order.user_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (order.customer_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   if (order.status !== 'proof_approved') return NextResponse.json({ error: 'Order not ready for payment' }, { status: 400 })
 
-  const amountInCents = Math.round((order.total_price || 0) * 100)
-
+  const amountInCents = Math.round((order.final_total || 0) * 100)
   // Create Stripe Checkout Session
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
