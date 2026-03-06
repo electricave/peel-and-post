@@ -155,15 +155,6 @@ export interface ProofReviewForm {
   feedback?: string
 }
 
-export interface BacklogItem {
-  id: string
-  phase: number
-  title: string
-  notes: string | null
-  resolved: boolean
-  created_at: string
-}
-
 // ============================================================
 // API response types
 // ============================================================

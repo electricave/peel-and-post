@@ -1,9 +1,8 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
-import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import type { Profile, BacklogItem } from '@/types'
+import type { Profile } from '@/types'
 
 
 const NAV_ITEMS = [
@@ -31,55 +30,6 @@ export default function Sidebar({
   const supabase = createClient()
 
   const isStudio = profile?.role === 'studio'
-
-  // ── Phase backlog (studio only) ──────────────────────────
-  const CURRENT_PHASE = 1
-  const [backlogOpen, setBacklogOpen] = useState(false)
-  const [backlogItems, setBacklogItems] = useState<BacklogItem[]>([])
-  const [newItem, setNewItem] = useState('')
-  const [addingItem, setAddingItem] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    if (!isStudio) return
-    fetch(`/api/backlog?phase=${CURRENT_PHASE}`)
-      .then(r => r.json())
-      .then(({ data }) => data && setBacklogItems(data))
-  }, [isStudio])
-
-  async function toggleResolved(item: BacklogItem) {
-    setBacklogItems(prev => prev.map(i => i.id === item.id ? { ...i, resolved: !i.resolved } : i))
-    await fetch('/api/backlog', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: item.id, resolved: !item.resolved }),
-    })
-  }
-
-  async function addItem() {
-    if (!newItem.trim()) return
-    setAddingItem(true)
-    const res = await fetch('/api/backlog', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phase: CURRENT_PHASE, title: newItem.trim() }),
-    })
-    const { data } = await res.json()
-    if (data) setBacklogItems(prev => [...prev, data])
-    setNewItem('')
-    setAddingItem(false)
-  }
-
-  async function deleteItem(id: string) {
-    setBacklogItems(prev => prev.filter(i => i.id !== id))
-    await fetch('/api/backlog', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    })
-  }
-
-  const pendingCount = backlogItems.filter(i => !i.resolved).length
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -195,94 +145,6 @@ export default function Sidebar({
         {NAV_ITEMS.map(item => (
           <NavItem key={item.id} item={item} badge={badges[item.id]} />
         ))}
-
-        {/* Phase backlog — studio only */}
-        {isStudio && (
-          <div style={{ marginTop: '16px' }}>
-            <div style={{ margin: '0 12px 8px', borderTop: '1px solid rgba(255,255,255,0.08)' }} />
-            <button
-              onClick={() => setBacklogOpen(o => !o)}
-              style={{
-                width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
-                padding: '10px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer',
-                background: backlogOpen ? 'rgba(255,255,255,0.08)' : 'transparent',
-                color: 'rgba(247,243,238,0.6)', fontSize: '14px', textAlign: 'left',
-              }}
-            >
-              <span style={{ width: '18px', textAlign: 'center', fontSize: '16px', flexShrink: 0 }}>☑</span>
-              <span style={{ flex: 1 }}>Phase {CURRENT_PHASE} Checklist</span>
-              {pendingCount > 0 && (
-                <span style={{
-                  background: 'var(--gold)', color: 'var(--brown)',
-                  fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '10px',
-                }}>
-                  {pendingCount}
-                </span>
-              )}
-              <span style={{ fontSize: '10px', opacity: 0.5, transform: backlogOpen ? 'rotate(180deg)' : 'none', display: 'inline-block', transition: 'transform 0.2s' }}>▼</span>
-            </button>
-
-            {backlogOpen && (
-              <div style={{ padding: '4px 12px 8px' }}>
-                {backlogItems.length === 0 && (
-                  <p style={{ fontSize: '12px', color: 'rgba(247,243,238,0.35)', fontStyle: 'italic', padding: '4px 0 8px 4px', margin: 0 }}>
-                    No items — add things to resolve before Phase {CURRENT_PHASE + 1}
-                  </p>
-                )}
-                {backlogItems.map(item => (
-                  <div key={item.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '5px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <input
-                      type="checkbox"
-                      checked={item.resolved}
-                      onChange={() => toggleResolved(item)}
-                      style={{ marginTop: '3px', accentColor: 'var(--sage)', flexShrink: 0, cursor: 'pointer' }}
-                    />
-                    <span style={{
-                      fontSize: '12px', flex: 1, lineHeight: '1.4',
-                      color: item.resolved ? 'rgba(247,243,238,0.3)' : 'rgba(247,243,238,0.75)',
-                      textDecoration: item.resolved ? 'line-through' : 'none',
-                    }}>
-                      {item.title}
-                    </span>
-                    <button
-                      onClick={() => deleteItem(item.id)}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(247,243,238,0.2)', fontSize: '12px', padding: '0 2px', flexShrink: 0, lineHeight: 1 }}
-                      title="Remove"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-                {/* Add item input */}
-                <div style={{ display: 'flex', gap: '6px', marginTop: '10px' }}>
-                  <input
-                    ref={inputRef}
-                    value={newItem}
-                    onChange={e => setNewItem(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && addItem()}
-                    placeholder="Add item…"
-                    style={{
-                      flex: 1, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
-                      borderRadius: '6px', padding: '6px 8px', fontSize: '12px',
-                      color: 'var(--cream)', outline: 'none',
-                    }}
-                  />
-                  <button
-                    onClick={addItem}
-                    disabled={addingItem || !newItem.trim()}
-                    style={{
-                      padding: '6px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer',
-                      background: newItem.trim() ? 'var(--terracotta)' : 'rgba(255,255,255,0.1)',
-                      color: 'white', fontSize: '13px', fontWeight: 700, flexShrink: 0,
-                    }}
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
       </nav>
 
       {/* User footer */}
