@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import ArtworkGuidelines from '@/components/orders/ArtworkGuidelines';
 import type { ArtworkFile } from '@/types';
 
 const ACCEPTED = '.png,.jpg,.jpeg,.pdf,.ai,.eps,.svg';
@@ -139,6 +140,9 @@ export default function ArtworkUploader({
           </button>
         )}
       </div>
+
+      {/* Artwork guidelines — only for customers */}
+      {!isStudio && <ArtworkGuidelines />}
 
       {/* Drop zone — only for customers */}
       {!isStudio && (
