@@ -130,12 +130,6 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage }:
               💳 Payment Due
             </span>
           )}
-          {/* Paid / in production badge in summary row */}
-          {showPaidBanner && (
-            <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: '#E8EDE4', color: '#7A8C6E', whiteSpace: 'nowrap' }}>
-              ✓ Paid
-            </span>
-          )}
           <StatusPill status={order.status} />
           <span style={{ fontSize: '11px', color: 'var(--brown-light)', transition: 'transform 0.25s', display: 'inline-block', transform: open ? 'rotate(180deg)' : 'none' }}>▼</span>
         </div>
