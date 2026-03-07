@@ -133,6 +133,8 @@ export default function StudioDashboardClient({
   const [updatingOrder, setUpdatingOrder] = useState<string | null>(null)
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null)
   const [statusDropdownOpen, setStatusDropdownOpen] = useState<string | null>(null)
+  const [trackingModal, setTrackingModal] = useState<{ orderId: string } | null>(null)
+  const [trackingInput, setTrackingInput] = useState('')
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => { setMounted(true) }, [])
@@ -190,6 +192,18 @@ export default function StudioDashboardClient({
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o))
     }
     setUpdatingOrder(null)
+  }
+
+  async function confirmShipped() {
+    if (!trackingModal) return
+    await updateStatus(trackingModal.orderId, 'shipped', trackingInput.trim() || undefined)
+    setOrders(prev => prev.map(o =>
+      o.id === trackingModal.orderId
+        ? { ...o, status: 'shipped' as OrderStatus, tracking_number: trackingInput.trim() || o.tracking_number }
+        : o
+    ))
+    setTrackingModal(null)
+    setTrackingInput('')
   }
 
   function formatDate(iso: string) {
@@ -528,7 +542,16 @@ export default function StudioDashboardClient({
                                 {ALL_STATUSES.map(s => (
                                   <button
                                     key={s}
-                                    onClick={e => { e.stopPropagation(); updateStatus(order.id, s) }}
+                                    onClick={e => {
+                                      e.stopPropagation()
+                                      setStatusDropdownOpen(null)
+                                      if (s === 'shipped') {
+                                        setTrackingInput('')
+                                        setTrackingModal({ orderId: order.id })
+                                      } else {
+                                        updateStatus(order.id, s)
+                                      }
+                                    }}
                                     style={{
                                       display: 'block', width: '100%', textAlign: 'left',
                                       padding: '8px 14px',
@@ -801,6 +824,51 @@ export default function StudioDashboardClient({
           style={{ position: 'fixed', inset: 0, zIndex: 50 }}
           onClick={() => setStatusDropdownOpen(null)}
         />
+      )}
+
+      {/* Tracking number modal */}
+      {trackingModal && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(74,55,40,0.5)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}
+          onClick={e => e.target === e.currentTarget && setTrackingModal(null)}
+        >
+          <div style={{ background: 'var(--white)', borderRadius: '16px', padding: '32px', width: '420px', maxWidth: '95vw', boxShadow: '0 20px 60px rgba(74,55,40,0.25)' }}>
+            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', fontWeight: 700, color: 'var(--brown)', marginBottom: '8px' }}>
+              📦 Mark as Shipped
+            </div>
+            <p style={{ fontSize: '13px', color: 'var(--brown-light)', margin: '0 0 20px', lineHeight: 1.5 }}>
+              Add a tracking number to notify the customer. You can leave it blank if you don't have one yet.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '20px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--brown-light)' }}>
+                Tracking Number (optional)
+              </label>
+              <input
+                type="text"
+                value={trackingInput}
+                onChange={e => setTrackingInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && confirmShipped()}
+                placeholder="e.g. 1Z999AA10123456784"
+                autoFocus
+                style={{ padding: '10px 14px', borderRadius: '10px', border: '1.5px solid var(--cream-dark)', background: 'var(--cream)', fontFamily: 'Lato, sans-serif', fontSize: '14px', color: 'var(--brown)', outline: 'none', width: '100%', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={confirmShipped}
+                style={{ flex: 1, padding: '11px', borderRadius: '9px', background: 'var(--sage)', color: 'white', border: 'none', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Lato, sans-serif' }}
+              >
+                ✓ Confirm Shipped
+              </button>
+              <button
+                onClick={() => setTrackingModal(null)}
+                style={{ padding: '11px 18px', borderRadius: '9px', background: 'transparent', border: '1.5px solid var(--cream-dark)', color: 'var(--brown-mid)', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Lato, sans-serif' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

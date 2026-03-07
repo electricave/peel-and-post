@@ -46,6 +46,15 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage, o
   const supabase = createClient()
   const proofInputRef = useRef<HTMLInputElement>(null)
 
+  function getTrackingUrl(trackingNumber: string): string {
+    const n = trackingNumber.trim().replace(/\s/g, '')
+    if (/^1Z/i.test(n)) return `https://www.ups.com/track?tracknum=${n}`
+    if (/^[0-9]{12,22}$/.test(n) && /^[3489]/.test(n)) return `https://www.fedex.com/fedextrack/?tracknumbers=${n}`
+    if (/^9[0-9]{15,21}$/.test(n)) return `https://tools.usps.com/go/TrackConfirmAction?tLabels=${n}`
+    if (/^[0-9]{10}$/.test(n)) return `https://www.dhl.com/en/express/tracking.html?AWB=${n}`
+    return `https://parcelsapp.com/en/tracking/${n}`
+  }
+
   const [open, setOpen] = useState(false)
   const [proofs, setProofs] = useState<Proof[]>([])
   const [loadingProofs, setLoadingProofs] = useState(false)
@@ -407,9 +416,15 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage, o
               </button>
             )}
             {order.tracking_number && (
-              <button style={{ padding: '9px 18px', borderRadius: '8px', background: 'transparent', border: '1.5px solid var(--cream-dark)', color: 'var(--brown-mid)', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+              <a
+                href={getTrackingUrl(order.tracking_number)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                style={{ padding: '9px 18px', borderRadius: '8px', background: 'transparent', border: '1.5px solid var(--cream-dark)', color: 'var(--brown-mid)', fontSize: '13px', fontWeight: 700, cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              >
                 📦 Track Shipment
-              </button>
+              </a>
             )}
             <a
               href={`/orders/${order.id}/invoice`}
