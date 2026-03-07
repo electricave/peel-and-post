@@ -12,8 +12,9 @@ const NAV_ITEMS = [
 ]
 
 const STUDIO_NAV_ITEMS = [
-  { id: 'studio', label: 'Studio Dashboard', icon: '⚙', href: '/studio' },
-  { id: 'pricing', label: 'Pricing Rules',     icon: '◈', href: '/studio/pricing' },
+  { id: 'studio',     label: 'Studio Dashboard', icon: '⚙', href: '/studio' },
+  { id: 'pricing',    label: 'Pricing Rules',     icon: '◈', href: '/studio/pricing' },
+  { id: 'analytics',  label: 'Analytics',         icon: '◉', href: '/studio/analytics' },
 ]
 
 export default function Sidebar({
