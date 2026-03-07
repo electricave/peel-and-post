@@ -132,11 +132,9 @@ export default function StudioDashboardClient({
 
   const [orders, setOrders] = useState<Order[]>(initialOrders)
   const [search, setSearch] = useState('')
+  const [tab, setTab] = useState<'current' | 'past'>('current')
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all')
   const [updatingOrder, setUpdatingOrder] = useState<string | null>(null)
-  // Status groups collapsed by default for terminal statuses
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<OrderStatus>>(
-    new Set(['delivered', 'cancelled'] as OrderStatus[])
-  )
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null)
   const [statusDropdownOpen, setStatusDropdownOpen] = useState<string | null>(null)
   const [trackingModal, setTrackingModal] = useState<{ orderId: string } | null>(null)
@@ -173,31 +171,32 @@ export default function StudioDashboardClient({
   // Needs attention: artwork_needed + in_review (proof to prep)
   const attentionOrders = [...needsArtwork, ...inReview]
 
+  const PAST_STATUSES: OrderStatus[] = ['shipped', 'delivered', 'cancelled']
+  const CURRENT_STATUSES: OrderStatus[] = ALL_STATUSES.filter(s => !PAST_STATUSES.includes(s))
+
+  // Reset status filter when switching tabs
+  function switchTab(t: 'current' | 'past') {
+    setTab(t)
+    setStatusFilter('all')
+  }
+
+  const tabStatuses = tab === 'current' ? CURRENT_STATUSES : PAST_STATUSES
+
   // ── Filtered table ─────────────────────────────────────────
   const filtered = orders.filter(o => {
+    const inTab = tab === 'current'
+      ? !PAST_STATUSES.includes(o.status)
+      : PAST_STATUSES.includes(o.status)
+    const matchesStatus = statusFilter === 'all' || o.status === statusFilter
     const q = search.toLowerCase()
-    return !q
+    const matchesSearch = !q
       || String(o.order_number).includes(q)
       || (o.profiles?.full_name || '').toLowerCase().includes(q)
       || (o.profiles?.email || '').toLowerCase().includes(q)
       || (o.profiles?.company_name || '').toLowerCase().includes(q)
       || o.product.toLowerCase().includes(q)
+    return inTab && matchesStatus && matchesSearch
   })
-
-  // Group filtered orders by status, in lifecycle order
-  const ordersByStatus: Partial<Record<OrderStatus, Order[]>> = {}
-  for (const status of ALL_STATUSES) {
-    const group = filtered.filter(o => o.status === status)
-    if (group.length > 0) ordersByStatus[status] = group
-  }
-
-  function toggleGroup(status: OrderStatus) {
-    setCollapsedGroups(prev => {
-      const next = new Set(prev)
-      next.has(status) ? next.delete(status) : next.add(status)
-      return next
-    })
-  }
 
   // ── Helpers ────────────────────────────────────────────────
   async function updateStatus(orderId: string, newStatus: OrderStatus, trackingNumber?: string) {
@@ -451,41 +450,104 @@ export default function StudioDashboardClient({
         overflow: 'hidden',
       }}>
         {/* Table toolbar */}
-        <div style={{
-          padding: '20px 24px',
-          borderBottom: '1px solid var(--cream-dark)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 16,
-          flexWrap: 'wrap',
-        }}>
-          <h2 style={{
-            fontFamily: 'Playfair Display, serif',
-            fontSize: 18, fontWeight: 600, color: 'var(--brown)', margin: 0,
-          }}>
-            All Orders
-          </h2>
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+        <div style={{ padding: '20px 24px 0', borderBottom: '1px solid var(--cream-dark)' }}>
+
+          {/* Top row: title + search */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, gap: 16 }}>
+            <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 18, fontWeight: 600, color: 'var(--brown)', margin: 0 }}>
+              All Orders
+            </h2>
             <div style={{ position: 'relative' }}>
-              <span style={{
-                position: 'absolute', left: 12, top: '50%',
-                transform: 'translateY(-50%)',
-                color: 'var(--brown-light)', fontSize: 14, pointerEvents: 'none',
-              }}>🔍</span>
+              <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--brown-light)', fontSize: 14, pointerEvents: 'none' }}>🔍</span>
               <input
                 type="text"
                 placeholder="Search name, company, product..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                style={{
-                  paddingLeft: 36, paddingRight: 14, paddingTop: 9, paddingBottom: 9,
-                  borderRadius: 10, border: '1px solid var(--cream-dark)',
-                  background: 'var(--cream)', fontSize: 13, color: 'var(--brown)',
-                  fontFamily: 'Lato, sans-serif', outline: 'none', width: 240,
-                }}
+                style={{ paddingLeft: 36, paddingRight: 14, paddingTop: 9, paddingBottom: 9, borderRadius: 10, border: '1px solid var(--cream-dark)', background: 'var(--cream)', fontSize: 13, color: 'var(--brown)', fontFamily: 'Lato, sans-serif', outline: 'none', width: 240 }}
               />
             </div>
+          </div>
+
+          {/* Current / Past tabs */}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+            {(['current', 'past'] as const).map(t => {
+              const count = orders.filter(o => t === 'current' ? !PAST_STATUSES.includes(o.status) : PAST_STATUSES.includes(o.status)).length
+              const active = tab === t
+              return (
+                <button
+                  key={t}
+                  onClick={() => switchTab(t)}
+                  style={{
+                    padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                    fontFamily: 'Lato, sans-serif', fontSize: 13, fontWeight: 700,
+                    background: active ? 'var(--terracotta)' : 'transparent',
+                    color: active ? 'white' : 'var(--brown-light)',
+                    transition: 'all 0.2s',
+                    display: 'flex', alignItems: 'center', gap: 6,
+                  }}
+                >
+                  {t === 'current' ? 'Current Orders' : 'Past Orders'}
+                  {count > 0 && (
+                    <span style={{
+                      background: active ? 'rgba(255,255,255,0.25)' : 'var(--cream-dark)',
+                      color: active ? 'white' : 'var(--brown-mid)',
+                      fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 8,
+                    }}>
+                      {count}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Status filter chips */}
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', paddingBottom: 14 }}>
+            <button
+              onClick={() => setStatusFilter('all')}
+              style={{
+                padding: '5px 14px', borderRadius: 20, cursor: 'pointer',
+                fontFamily: 'Lato, sans-serif', fontSize: 12, fontWeight: 700,
+                border: `1.5px solid ${statusFilter === 'all' ? 'var(--brown)' : 'var(--cream-dark)'}`,
+                background: statusFilter === 'all' ? 'var(--brown)' : 'transparent',
+                color: statusFilter === 'all' ? 'white' : 'var(--brown-light)',
+                transition: 'all 0.15s',
+              }}
+            >
+              All
+            </button>
+            {tabStatuses.map(s => {
+              const cfg = STATUS_CONFIG[s]
+              const count = orders.filter(o => o.status === s).length
+              if (count === 0) return null
+              const active = statusFilter === s
+              return (
+                <button
+                  key={s}
+                  onClick={() => setStatusFilter(active ? 'all' : s)}
+                  style={{
+                    padding: '5px 14px', borderRadius: 20, cursor: 'pointer',
+                    fontFamily: 'Lato, sans-serif', fontSize: 12, fontWeight: 700,
+                    border: `1.5px solid ${active ? cfg.color : 'var(--cream-dark)'}`,
+                    background: active ? cfg.bg : 'transparent',
+                    color: active ? cfg.color : 'var(--brown-light)',
+                    transition: 'all 0.15s',
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                  }}
+                >
+                  {cfg.label}
+                  <span style={{
+                    fontSize: 10, fontWeight: 700,
+                    background: active ? cfg.color : 'var(--cream-dark)',
+                    color: active ? 'white' : 'var(--brown-mid)',
+                    padding: '0px 5px', borderRadius: 8,
+                  }}>
+                    {count}
+                  </span>
+                </button>
+              )
+            })}
           </div>
         </div>
 
@@ -588,68 +650,20 @@ export default function StudioDashboardClient({
                     padding: '48px 24px', textAlign: 'center',
                     color: 'var(--brown-light)', fontSize: 14,
                   }}>
-                    No orders match your search.
+                    No orders match your filters.
                   </td>
                 </tr>
               ) : (
-                ALL_STATUSES.map(status => {
-                  const group = ordersByStatus[status]
-                  if (!group || group.length === 0) return null
-                  const cfg = STATUS_CONFIG[status]
-                  const isCollapsed = collapsedGroups.has(status)
+                filtered.map((order, idx) => {
+                  const orderProofs  = getOrderProofs(order.id)
+                  const latestProof  = orderProofs[0]
+                  const orderArtwork = getOrderArtwork(order.id)
+                  const unread       = getUnreadForOrder(order.id)
+                  const isExpanded   = expandedOrder === order.id
+                  const isUpdating   = updatingOrder === order.id
 
                   return (
                     <>
-                      {/* ── Status group header row ──────────────── */}
-                      <tr
-                        key={`group-${status}`}
-                        onClick={() => toggleGroup(status)}
-                        style={{ cursor: 'pointer', userSelect: 'none' }}
-                      >
-                        <td colSpan={10} style={{
-                          padding: '10px 20px',
-                          background: cfg.bg,
-                          borderTop: '2px solid var(--cream-dark)',
-                          borderBottom: isCollapsed ? '1px solid var(--cream-dark)' : 'none',
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <span style={{
-                              fontSize: 11, fontWeight: 700, letterSpacing: '0.1em',
-                              textTransform: 'uppercase', color: cfg.color,
-                            }}>
-                              {cfg.label}
-                            </span>
-                            <span style={{
-                              background: cfg.color, color: 'white',
-                              borderRadius: 20, fontSize: 10, fontWeight: 700,
-                              padding: '1px 8px',
-                            }}>
-                              {group.length}
-                            </span>
-                            <span style={{
-                              marginLeft: 'auto', fontSize: 11,
-                              color: cfg.color, fontWeight: 700,
-                              transition: 'transform 0.2s',
-                              display: 'inline-block',
-                              transform: isCollapsed ? 'rotate(-90deg)' : 'none',
-                            }}>
-                              ▼
-                            </span>
-                          </div>
-                        </td>
-                      </tr>
-
-                      {/* ── Order rows ──────────────────────────── */}
-                      {!isCollapsed && group.map((order, idx) => {
-                        const orderProofs  = getOrderProofs(order.id)
-                        const latestProof  = orderProofs[0]
-                        const orderArtwork = getOrderArtwork(order.id)
-                        const unread       = getUnreadForOrder(order.id)
-                        const isExpanded   = expandedOrder === order.id
-                        const isUpdating   = updatingOrder === order.id
-
-                        return (
-                          <>
                       <tr
                         key={order.id}
                         style={{
@@ -997,9 +1011,6 @@ export default function StudioDashboardClient({
                       )}
                     </>
                   )
-                      })}
-                    </>
-                  )
                 })
               )}
             </tbody>
@@ -1011,9 +1022,9 @@ export default function StudioDashboardClient({
           padding: '12px 24px', borderTop: '1px solid var(--cream-dark)',
           background: 'var(--cream)', fontSize: 12, color: 'var(--brown-light)',
         }}>
-          {search
-            ? `${filtered.length} of ${orders.length} orders match "${search}"`
-            : `${orders.length} total orders`}
+          Showing {filtered.length} order{filtered.length !== 1 ? 's' : ''}
+          {statusFilter !== 'all' ? ` · ${STATUS_CONFIG[statusFilter].label}` : ''}
+          {search ? ` matching "${search}"` : ''}
         </div>
       </div>
 
