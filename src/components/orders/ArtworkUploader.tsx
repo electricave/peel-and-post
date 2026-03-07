@@ -195,12 +195,16 @@ export default function ArtworkUploader({
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                 <span style={{ fontSize: 16 }}>{getFileIcon(file.mime_type, file.file_name)}</span>
                 <div style={{ minWidth: 0 }}>
-                  <p style={{
-                    margin: 0, fontSize: 13, fontWeight: 600,
-                    color: 'var(--brown)', fontFamily: 'Lato, sans-serif',
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    maxWidth: 220,
-                  }}>
+                  <p
+                    onClick={() => handleDownload(file)}
+                    style={{
+                      margin: 0, fontSize: 13, fontWeight: 600,
+                      color: 'var(--terracotta)', fontFamily: 'Lato, sans-serif',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      maxWidth: 220, cursor: 'pointer',
+                      textDecoration: 'underline', textDecorationStyle: 'dotted',
+                    }}
+                  >
                     {file.file_name}
                   </p>
                   <p style={{
@@ -212,18 +216,6 @@ export default function ArtworkUploader({
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                <button
-                  onClick={() => handleDownload(file)}
-                  style={{
-                    fontSize: 11, fontWeight: 700, letterSpacing: '1px',
-                    textTransform: 'uppercase', fontFamily: 'Lato, sans-serif',
-                    color: 'var(--brown-light)', background: 'none',
-                    border: '1px solid var(--cream-dark)', borderRadius: 6,
-                    padding: '4px 10px', cursor: 'pointer',
-                  }}
-                >
-                  View
-                </button>
                 {(isStudio || file.user_id === userId) && (
                   <button
                     onClick={() => handleDelete(file)}
