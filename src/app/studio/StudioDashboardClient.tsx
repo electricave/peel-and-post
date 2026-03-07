@@ -162,6 +162,7 @@ export default function StudioDashboardClient({
   const inReview          = orders.filter(o => o.status === 'in_review')
   const proofSent         = orders.filter(o => o.status === 'proof_sent')
   const inProduction      = orders.filter(o => o.status === 'in_production')
+  const shipping          = orders.filter(o => o.status === 'shipped')
 
   // Unread messages: messages not sent by studio that have no read_at
   const unreadCount = conversations.reduce((acc, conv) => {
@@ -355,15 +356,14 @@ export default function StudioDashboardClient({
       {/* ── Stat Cards ────────────────────────────────────── */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(5, 1fr)',
+        gridTemplateColumns: 'repeat(4, 1fr)',
         gap: 16,
         marginBottom: 36,
       }}>
-        <StatCard label="Total Orders"    value={orders.length}        sub="all time" />
-        <StatCard label="Artwork Needed"  value={needsArtwork.length}  sub="awaiting upload"   accent={needsArtwork.length > 0 ? 'var(--gold)' : undefined} />
-        <StatCard label="In Review"       value={inReview.length}      sub="proof to prepare"  accent={inReview.length > 0 ? 'var(--terracotta)' : undefined} />
-        <StatCard label="Proof Sent"      value={proofSent.length}     sub="awaiting approval" accent={proofSent.length > 0 ? 'var(--gold)' : undefined} />
-        <StatCard label="Unread Messages" value={unreadCount}          sub="from customers"    accent={unreadCount > 0 ? 'var(--terracotta)' : undefined} />
+        <StatCard label="Proof Needed"    value={inReview.length}      sub="proof to prepare"  accent={inReview.length > 0 ? 'var(--terracotta)' : undefined} />
+        <StatCard label="Approval Needed" value={proofSent.length}     sub="awaiting approval" accent={proofSent.length > 0 ? 'var(--gold)' : undefined} />
+        <StatCard label="In Production"   value={inProduction.length}  sub="being printed"     accent={inProduction.length > 0 ? 'var(--brown-mid)' : undefined} />
+        <StatCard label="Shipping"        value={shipping.length}      sub="on their way"      accent={shipping.length > 0 ? 'var(--sage)' : undefined} />
       </div>
 
       {/* ── Needs Attention ───────────────────────────────── */}
@@ -503,22 +503,48 @@ export default function StudioDashboardClient({
             })}
           </div>
 
-          {/* Status filter chips */}
+          {/* Status filter chips — Proof first, All last */}
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', paddingBottom: 14 }}>
-            <button
-              onClick={() => setStatusFilter('all')}
-              style={{
-                padding: '5px 14px', borderRadius: 20, cursor: 'pointer',
-                fontFamily: 'Lato, sans-serif', fontSize: 12, fontWeight: 700,
-                border: `1.5px solid ${statusFilter === 'all' ? 'var(--brown)' : 'var(--cream-dark)'}`,
-                background: statusFilter === 'all' ? 'var(--brown)' : 'transparent',
-                color: statusFilter === 'all' ? 'white' : 'var(--brown-light)',
-                transition: 'all 0.15s',
-              }}
-            >
-              All
-            </button>
-            {tabStatuses.map(s => {
+            {/* In Review chip always shown first, labelled "Proof" */}
+            {tab === 'current' && (() => {
+              const s = 'in_review' as OrderStatus
+              const cfg = STATUS_CONFIG[s]
+              const count = orders.filter(o => o.status === s).length
+              const active = statusFilter === s
+              const empty = count === 0
+              return (
+                <button
+                  key={s}
+                  onClick={() => !empty && setStatusFilter(active ? 'all' : s)}
+                  style={{
+                    padding: '5px 14px', borderRadius: 20,
+                    cursor: empty ? 'default' : 'pointer',
+                    fontFamily: 'Lato, sans-serif', fontSize: 12, fontWeight: 700,
+                    border: `1.5px solid ${active ? cfg.color : 'var(--cream-dark)'}`,
+                    background: active ? cfg.bg : 'transparent',
+                    color: active ? cfg.color : empty ? 'var(--cream-dark)' : 'var(--brown-light)',
+                    opacity: empty ? 0.5 : 1,
+                    transition: 'all 0.15s',
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                  }}
+                >
+                  Proof
+                  {count > 0 && (
+                    <span style={{
+                      fontSize: 10, fontWeight: 700,
+                      background: active ? cfg.color : 'var(--cream-dark)',
+                      color: active ? 'white' : 'var(--brown-mid)',
+                      padding: '0px 5px', borderRadius: 8,
+                    }}>
+                      {count}
+                    </span>
+                  )}
+                </button>
+              )
+            })()}
+
+            {/* Remaining status chips (excluding in_review which is handled above) */}
+            {tabStatuses.filter(s => s !== 'in_review').map(s => {
               const cfg = STATUS_CONFIG[s]
               const count = orders.filter(o => o.status === s).length
               const active = statusFilter === s
@@ -553,6 +579,21 @@ export default function StudioDashboardClient({
                 </button>
               )
             })}
+
+            {/* All — always last */}
+            <button
+              onClick={() => setStatusFilter('all')}
+              style={{
+                padding: '5px 14px', borderRadius: 20, cursor: 'pointer',
+                fontFamily: 'Lato, sans-serif', fontSize: 12, fontWeight: 700,
+                border: `1.5px solid ${statusFilter === 'all' ? 'var(--brown)' : 'var(--cream-dark)'}`,
+                background: statusFilter === 'all' ? 'var(--brown)' : 'transparent',
+                color: statusFilter === 'all' ? 'white' : 'var(--brown-light)',
+                transition: 'all 0.15s',
+              }}
+            >
+              All
+            </button>
           </div>
         </div>
 
