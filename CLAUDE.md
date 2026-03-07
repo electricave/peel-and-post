@@ -158,7 +158,7 @@ These features were identified during Phase 1 development and should be addresse
 
 | # | Feature |
 |---|---|
-| F1 | Template Library — reusable order templates for repeat customers |
+| F1 | Reorder button — one-click reorder from any past order (shipped/delivered/cancelled), pre-fills NewOrderModal at review step |
 | F2 | Shipment tracking integration |
 | F3 | Studio analytics dashboard |
 | F4 | Bulk order management |

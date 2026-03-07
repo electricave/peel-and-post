@@ -16,7 +16,13 @@ export default function OrdersClient({ profile, currentOrders, pastOrders, stats
 }) {
   const [tab, setTab] = useState<'current' | 'past'>('current')
   const [orderModalOpen, setOrderModalOpen] = useState(false)
+  const [reorderSource, setReorderSource] = useState<Order | undefined>(undefined)
   const router = useRouter()
+
+  function handleReorder(order: Order) {
+    setReorderSource(order)
+    setOrderModalOpen(true)
+  }
 
   const orders = tab === 'current' ? currentOrders : pastOrders
   const userId = profile?.id ?? ''
@@ -85,6 +91,7 @@ export default function OrdersClient({ profile, currentOrders, pastOrders, stats
                 isStudio={isStudio}
                 onProofAction={() => router.refresh()}
                 onMessage={() => router.push('/messages')}
+                onReorder={handleReorder}
               />
             ))
           )}
@@ -93,8 +100,9 @@ export default function OrdersClient({ profile, currentOrders, pastOrders, stats
 
       <NewOrderModal
         open={orderModalOpen}
-        onClose={() => setOrderModalOpen(false)}
-        onSuccess={() => { setOrderModalOpen(false); router.refresh() }}
+        onClose={() => { setOrderModalOpen(false); setReorderSource(undefined) }}
+        onSuccess={() => { setOrderModalOpen(false); setReorderSource(undefined); router.refresh() }}
+        reorderFrom={reorderSource}
       />
     </div>
   )

@@ -35,12 +35,13 @@ const PRODUCT_EMOJI: Record<string, string> = {
   'Clear Stickers': '🔍',
 }
 
-export function OrderCard({ order, userId, isStudio, onProofAction, onMessage }: {
+export function OrderCard({ order, userId, isStudio, onProofAction, onMessage, onReorder }: {
   order: Order
   userId: string
   isStudio: boolean
   onProofAction?: () => void
   onMessage?: () => void
+  onReorder?: (order: Order) => void
 }) {
   const supabase = createClient()
   const proofInputRef = useRef<HTMLInputElement>(null)
@@ -397,6 +398,14 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage }:
             >
               💬 Message Studio
             </button>
+            {!isStudio && ['shipped', 'delivered', 'cancelled'].includes(order.status) && onReorder && (
+              <button
+                onClick={e => { e.stopPropagation(); onReorder(order) }}
+                style={{ padding: '9px 18px', borderRadius: '8px', background: 'transparent', border: '1.5px solid var(--cream-dark)', color: 'var(--brown-mid)', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+              >
+                🔁 Reorder
+              </button>
+            )}
             {order.tracking_number && (
               <button style={{ padding: '9px 18px', borderRadius: '8px', background: 'transparent', border: '1.5px solid var(--cream-dark)', color: 'var(--brown-mid)', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
                 📦 Track Shipment

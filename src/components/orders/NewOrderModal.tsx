@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
+import type { Order } from '@/types'
 
 const TOTAL_STEPS = 7
 
@@ -102,13 +103,31 @@ const EMPTY: OrderState = {
   shape: '', turnaround: '', notes: '',
 }
 
-export default function NewOrderModal({ open, onClose, onSuccess }: {
+function orderToState(order: Order): OrderState {
+  const qtyStr = String(order.quantity)
+  const qtyInList = QUANTITIES.some(q => q.value === qtyStr)
+  const sizeInList = SIZES.some(s => s.value === order.size)
+  return {
+    product:    order.product,
+    quantity:   qtyInList ? qtyStr : 'custom',
+    customQty:  qtyInList ? '' : qtyStr,
+    finish:     order.finish,
+    size:       sizeInList ? order.size : 'custom',
+    customSize: sizeInList ? '' : order.size,
+    shape:      order.shape,
+    turnaround: order.turnaround,
+    notes:      order.notes ?? '',
+  }
+}
+
+export default function NewOrderModal({ open, onClose, onSuccess, reorderFrom }: {
   open: boolean
   onClose: () => void
   onSuccess: () => void
+  reorderFrom?: Order
 }) {
-  const [step, setStep] = useState(1)
-  const [state, setState] = useState<OrderState>(EMPTY)
+  const [step, setStep] = useState(reorderFrom ? 7 : 1)
+  const [state, setState] = useState<OrderState>(reorderFrom ? orderToState(reorderFrom) : EMPTY)
   const [submitting, setSubmitting] = useState(false)
   const [liveQuote, setLiveQuote] = useState<LiveQuote | null>(null)
   const [quoteLoading, setQuoteLoading] = useState(false)
@@ -203,7 +222,7 @@ export default function NewOrderModal({ open, onClose, onSuccess }: {
 
   function handleClose() {
     onClose()
-    setTimeout(() => { setStep(1); setState(EMPTY); setLiveQuote(null) }, 300)
+    setTimeout(() => { setStep(reorderFrom ? 7 : 1); setState(reorderFrom ? orderToState(reorderFrom) : EMPTY); setLiveQuote(null) }, 300)
   }
 
   if (!open) return null
@@ -220,8 +239,12 @@ export default function NewOrderModal({ open, onClose, onSuccess }: {
         {/* Header */}
         <div style={{ padding: '24px 28px 20px', borderBottom: '1px solid var(--cream-dark)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexShrink: 0 }}>
           <div>
-            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '22px', fontWeight: 700, color: 'var(--brown)', marginBottom: '4px' }}>{s.title}</div>
-            <div style={{ fontSize: '13px', color: 'var(--brown-light)' }}>{s.sub}</div>
+            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '22px', fontWeight: 700, color: 'var(--brown)', marginBottom: '4px' }}>
+              {reorderFrom ? '🔁 Reorder' : s.title}
+            </div>
+            <div style={{ fontSize: '13px', color: 'var(--brown-light)' }}>
+              {reorderFrom ? `Pre-filled from Order #${reorderFrom.order_number} — confirm or adjust before submitting` : s.sub}
+            </div>
           </div>
           <button onClick={handleClose} style={{ width: '32px', height: '32px', borderRadius: '8px', border: '1.5px solid var(--cream-dark)', background: 'transparent', cursor: 'pointer', fontSize: '16px', color: 'var(--brown-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
         </div>
