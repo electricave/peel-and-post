@@ -670,12 +670,14 @@ export default function StudioDashboardClient({
                     <>
                       <tr
                         key={order.id}
+                        onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
                         style={{
                           borderBottom: '1px solid var(--cream-dark)',
                           background: selectedOrders.has(order.id)
                             ? 'var(--terracotta-pale)'
                             : idx % 2 === 0 ? 'var(--white)' : 'rgba(247,243,238,0.4)',
                           transition: 'background 0.15s',
+                          cursor: 'pointer',
                         }}
                         onMouseEnter={e => { if (!selectedOrders.has(order.id)) e.currentTarget.style.background = 'var(--terracotta-pale)' }}
                         onMouseLeave={e => { if (!selectedOrders.has(order.id)) e.currentTarget.style.background = idx % 2 === 0 ? 'var(--white)' : 'rgba(247,243,238,0.4)' }}
@@ -750,6 +752,8 @@ export default function StudioDashboardClient({
                                 e.stopPropagation()
                                 setStatusDropdownOpen(statusDropdownOpen === order.id ? null : order.id)
                               }}
+                              onMouseEnter={e => e.stopPropagation()}
+                              onMouseLeave={e => e.stopPropagation()}
                               disabled={isUpdating}
                               style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', opacity: isUpdating ? 0.5 : 1 }}
                             >
@@ -823,24 +827,10 @@ export default function StudioDashboardClient({
                         </td>
 
                         {/* Actions */}
-                        <td style={{ padding: '14px 16px' }}>
+                        <td style={{ padding: '14px 16px' }} onClick={e => e.stopPropagation()}>
                           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                             <button
-                              onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
-                              style={{
-                                background: isExpanded ? 'var(--brown)' : 'var(--cream)',
-                                color: isExpanded ? 'white' : 'var(--brown)',
-                                border: '1px solid var(--cream-dark)',
-                                borderRadius: 8, padding: '6px 12px',
-                                fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                                fontFamily: 'Lato, sans-serif', transition: 'all 0.15s',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {isExpanded ? 'Close' : 'Details'}
-                            </button>
-                            <button
-                              onClick={() => router.push(`/messages?order=${order.id}`)}
+                              onClick={e => { e.stopPropagation(); router.push(`/messages?order=${order.id}`) }}
                               style={{
                                 background: 'none', border: '1px solid var(--cream-dark)',
                                 borderRadius: 8, padding: '6px 10px',
@@ -850,6 +840,13 @@ export default function StudioDashboardClient({
                             >
                               💬
                             </button>
+                            <span style={{
+                              fontSize: 10, color: 'var(--brown-light)',
+                              display: 'inline-block',
+                              transition: 'transform 0.2s',
+                              transform: isExpanded ? 'rotate(180deg)' : 'none',
+                              paddingRight: 4,
+                            }}>▼</span>
                           </div>
                         </td>
                       </tr>
