@@ -117,12 +117,10 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage, o
     }
   }
 
-  async function handleViewProof() {
-    const latestProof = proofs[0]
-    if (!latestProof) return
+  async function handleViewProof(fileUrl: string) {
     setViewingProof(true)
     try {
-      const { data } = await supabase.storage.from('proofs').createSignedUrl(latestProof.file_url, 300)
+      const { data } = await supabase.storage.from('proofs').createSignedUrl(fileUrl, 300)
       if (data?.signedUrl) window.open(data.signedUrl, '_blank')
       else toast.error('Could not generate proof link')
     } catch {
@@ -349,13 +347,38 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage, o
                         ) : (
                           <>
                             <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: '#FEF3CD', color: '#7A5C00' }}>⏳ Needs Approval</span>
+                            <button
+                              onClick={e => { e.stopPropagation(); handleViewProof(proof.file_url) }}
+                              disabled={viewingProof}
+                              style={{ padding: '5px 12px', borderRadius: '7px', background: 'transparent', border: '1.5px solid var(--cream-dark)', color: 'var(--brown-mid)', fontSize: '12px', fontWeight: 700, cursor: viewingProof ? 'not-allowed' : 'pointer', opacity: viewingProof ? 0.6 : 1 }}
+                            >
+                              🖼 View Proof
+                            </button>
                             <button onClick={() => setReviewingProof(proof.id)} style={{ padding: '7px 16px', borderRadius: '7px', background: 'var(--terracotta)', color: 'white', border: 'none', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>Review</button>
                           </>
                         )
                       ) : proof.status === 'approved' ? (
-                        <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: 'var(--sage-pale)', color: 'var(--sage)' }}>✓ Approved</span>
+                        <>
+                          <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: 'var(--sage-pale)', color: 'var(--sage)' }}>✓ Approved</span>
+                          <button
+                            onClick={e => { e.stopPropagation(); handleViewProof(proof.file_url) }}
+                            disabled={viewingProof}
+                            style={{ padding: '5px 12px', borderRadius: '7px', background: 'transparent', border: '1.5px solid var(--cream-dark)', color: 'var(--brown-mid)', fontSize: '12px', fontWeight: 700, cursor: viewingProof ? 'not-allowed' : 'pointer', opacity: viewingProof ? 0.6 : 1 }}
+                          >
+                            🖼 View Proof
+                          </button>
+                        </>
                       ) : (
-                        <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: '#FCE4E4', color: '#B03030' }}>↩ Revision Requested</span>
+                        <>
+                          <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: '#FCE4E4', color: '#B03030' }}>↩ Revision Requested</span>
+                          <button
+                            onClick={e => { e.stopPropagation(); handleViewProof(proof.file_url) }}
+                            disabled={viewingProof}
+                            style={{ padding: '5px 12px', borderRadius: '7px', background: 'transparent', border: '1.5px solid var(--cream-dark)', color: 'var(--brown-mid)', fontSize: '12px', fontWeight: 700, cursor: viewingProof ? 'not-allowed' : 'pointer', opacity: viewingProof ? 0.6 : 1 }}
+                          >
+                            🖼 View Proof
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>
@@ -431,15 +454,6 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage, o
             >
               💬 Message Studio
             </button>
-            {proofs.length > 0 && (
-              <button
-                onClick={handleViewProof}
-                disabled={viewingProof}
-                style={{ padding: '9px 18px', borderRadius: '8px', background: 'transparent', border: '1.5px solid var(--cream-dark)', color: 'var(--brown-mid)', fontSize: '13px', fontWeight: 700, cursor: viewingProof ? 'not-allowed' : 'pointer', opacity: viewingProof ? 0.6 : 1 }}
-              >
-                🖼 View Proof
-              </button>
-            )}
             {!isStudio && ['shipped', 'delivered', 'cancelled'].includes(order.status) && onReorder && (
               <button
                 onClick={e => { e.stopPropagation(); onReorder(order) }}
