@@ -58,8 +58,8 @@ export default async function StudioPage() {
 
   // Fetch all artwork/files
   const { data: artwork } = await supabase
-    .from('files')
-    .select('order_id, file_url, file_name, created_at')
+    .from('artwork_files')
+    .select('order_id, file_path, file_name, created_at')
     .order('created_at', { ascending: false })
 
   return (

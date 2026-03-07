@@ -5,10 +5,11 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { Order, Proof, OrderStatus, Profile } from '@/types'
 import Sidebar from '@/components/layout/Sidebar'
+import ArtworkUploader from '@/components/orders/ArtworkUploader'
 
 type ArtworkFile = {
   order_id: string
-  file_url: string
+  file_path: string
   file_name: string
   created_at: string
 }
@@ -910,39 +911,11 @@ export default function StudioDashboardClient({
                                   background: 'var(--white)', borderRadius: 12,
                                   padding: '16px 18px', border: '1px solid var(--cream-dark)',
                                 }}>
-                                  <p style={{
-                                    fontSize: 10, fontWeight: 700, letterSpacing: '0.14em',
-                                    textTransform: 'uppercase', color: 'var(--brown-light)',
-                                    marginBottom: 12, marginTop: 0,
-                                  }}>Artwork Files</p>
-                                  {orderArtwork.length === 0 ? (
-                                    <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--brown-light)', fontSize: 13 }}>
-                                      <div style={{ fontSize: 24, marginBottom: 8 }}>🖼️</div>
-                                      No artwork uploaded yet
-                                    </div>
-                                  ) : (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                      {orderArtwork.map((a, i) => (
-                                        <a key={i} href={a.file_url} target="_blank" rel="noopener noreferrer"
-                                          style={{
-                                            display: 'flex', alignItems: 'center', gap: 8,
-                                            padding: '8px 10px', background: 'var(--cream)',
-                                            borderRadius: 8, fontSize: 12,
-                                            color: 'var(--terracotta)', textDecoration: 'none',
-                                            fontWeight: 600, border: '1px solid var(--cream-dark)',
-                                          }}
-                                        >
-                                          <span>📎</span>
-                                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                            {a.file_name}
-                                          </span>
-                                          <span style={{ fontSize: 10, color: 'var(--brown-light)', flexShrink: 0 }}>
-                                            {formatDate(a.created_at)}
-                                          </span>
-                                        </a>
-                                      ))}
-                                    </div>
-                                  )}
+                                  <ArtworkUploader
+                                    orderId={order.id}
+                                    userId={currentUserId}
+                                    isStudio={true}
+                                  />
                                 </div>
 
                                 {/* Proofs */}
