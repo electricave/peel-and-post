@@ -61,20 +61,28 @@ The DB constraint `orders_status_check` enforces this list. **If you add a new s
 ```
 src/
 ├── app/
-│   ├── auth/login/page.tsx              # Login + signup (combined toggle)
+│   ├── auth/
+│   │   ├── login/page.tsx               # Login + signup (combined toggle)
+│   │   ├── forgot-password/page.tsx     # Email entry → sends reset link
+│   │   └── reset-password/page.tsx      # PKCE callback + new password form
 │   ├── dashboard/page.tsx               # Customer home
 │   ├── orders/
 │   │   ├── page.tsx                     # Orders list (tabs: active / past)
 │   │   ├── [id]/invoice/page.tsx        # Customer invoice page
 │   │   └── success/page.tsx             # Post-Stripe redirect confirmation
-│   ├── studio/page.tsx                  # Studio order management view
+│   ├── studio/
+│   │   ├── page.tsx                     # Studio order management view
+│   │   └── analytics/
+│   │       ├── page.tsx                 # Server component — queries Supabase directly
+│   │       └── AnalyticsClient.tsx      # Pure SVG charts (BarChart, HorizontalBar, StatCard)
 │   ├── messages/page.tsx                # Realtime chat
 │   └── api/
 │       ├── orders/route.ts              # CRUD for orders
 │       ├── proofs/route.ts              # GET (list) · POST (studio upload) · PATCH (approve/revise)
 │       ├── checkout/route.ts            # Stripe checkout session
 │       ├── webhooks/stripe/route.ts     # Stripe webhook → sets status to 'paid'
-│       └── notifications/route.ts       # In-app notifications
+│       ├── notifications/route.ts       # In-app notifications
+│       └── analytics/route.ts           # Studio-only order aggregation (kept as fallback)
 ├── components/
 │   ├── layout/Sidebar.tsx               # Navigation sidebar (studio + customer)
 │   ├── orders/
@@ -154,14 +162,14 @@ These features were identified during Phase 1 development and should be addresse
 
 ---
 
-## Phase 2 — Planned (Not Started)
+## Phase 2 — Completed
 
-| # | Feature |
-|---|---|
-| F1 | Reorder button — one-click reorder from any past order (shipped/delivered/cancelled), pre-fills NewOrderModal at review step |
-| F2 | Shipment tracking integration |
-| F3 | Studio analytics dashboard |
-| F4 | Bulk order management |
+| # | Feature | Notes |
+|---|---|---|
+| F1 | Reorder button | Customer-facing. Shown on shipped/delivered/cancelled orders. Pre-fills `NewOrderModal` at review step via `reorderFrom` prop + `orderToState()` helper. Zero DB changes. |
+| F2 | Shipment tracking | Studio intercepts "shipped" status change with a tracking number modal. Customer `OrderCard` shows "Track Shipment" link with regex-based carrier detection (UPS/FedEx/USPS/DHL/parcelsapp fallback). |
+| F3 | Studio analytics dashboard | `/studio/analytics` — server-side Supabase aggregation (no HTTP self-fetch). Stat cards + pure SVG bar charts for orders/revenue over 6 months, horizontal bars for status and product breakdown. |
+| F4 | Bulk order management | Checkboxes on studio orders table with select-all (indeterminate state). Bulk actions bar: set status (parallel API calls) + Export CSV. Selected rows highlighted terracotta-pale. |
 
 ---
 
