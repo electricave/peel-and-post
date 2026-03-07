@@ -14,10 +14,34 @@ export default function ResetPasswordPage() {
   const router = useRouter()
 
   // Supabase PKCE flow: the reset link arrives as ?code=...&type=recovery
-  // createBrowserClient auto-exchanges it; we listen for PASSWORD_RECOVERY to show the form.
+  // We need to exchange the code ourselves — relying solely on onAuthStateChange
+  // misses the event if it fires before the listener is registered.
   useEffect(() => {
+    async function bootstrap() {
+      // 1. If there's a code in the URL, exchange it explicitly
+      const code = new URLSearchParams(window.location.search).get('code')
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code)
+        if (!error) {
+          setReady(true)
+          // Clean the code out of the URL without a page reload
+          window.history.replaceState({}, '', window.location.pathname)
+          return
+        }
+      }
+      // 2. Fallback: check if we already have a live recovery session
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        setReady(true)
+        return
+      }
+    }
+
+    bootstrap()
+
+    // 3. Also listen for the event in case the exchange fires asynchronously
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
+      if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
         setReady(true)
       }
     })
