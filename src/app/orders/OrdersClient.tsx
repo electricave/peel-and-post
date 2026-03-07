@@ -6,7 +6,23 @@ import Sidebar from '@/components/layout/Sidebar'
 import Topbar from '@/components/layout/Topbar'
 import NewOrderModal from '@/components/orders/NewOrderModal'
 import { OrderCard } from '@/components/orders/OrderCard'
-import type { Profile, Order } from '@/types'
+import type { Profile, Order, OrderStatus } from '@/types'
+
+const STATUS_LABELS: Partial<Record<OrderStatus, string>> = {
+  pending:        'Pending',
+  artwork_needed: 'Artwork Needed',
+  in_review:      'In Review',
+  proof_sent:     'Proof Sent',
+  proof_approved: 'Proof Approved',
+  paid:           'Paid',
+  in_production:  'In Production',
+  shipped:        'Shipped',
+  delivered:      'Delivered',
+  cancelled:      'Cancelled',
+}
+
+const CURRENT_STATUSES: OrderStatus[] = ['pending', 'artwork_needed', 'in_review', 'proof_sent', 'proof_approved', 'paid', 'in_production']
+const PAST_STATUSES: OrderStatus[]    = ['shipped', 'delivered', 'cancelled']
 
 export default function OrdersClient({ profile, currentOrders, pastOrders, stats }: {
   profile: Profile | null
@@ -15,6 +31,7 @@ export default function OrdersClient({ profile, currentOrders, pastOrders, stats
   stats: { activeOrders: number; proofsToReview: number; unreadMessages: number }
 }) {
   const [tab, setTab] = useState<'current' | 'past'>('current')
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all')
   const [orderModalOpen, setOrderModalOpen] = useState(false)
   const [reorderSource, setReorderSource] = useState<Order | undefined>(undefined)
   const router = useRouter()
@@ -24,7 +41,14 @@ export default function OrdersClient({ profile, currentOrders, pastOrders, stats
     setOrderModalOpen(true)
   }
 
-  const orders = tab === 'current' ? currentOrders : pastOrders
+  function switchTab(t: 'current' | 'past') {
+    setTab(t)
+    setStatusFilter('all')
+  }
+
+  const tabOrders = tab === 'current' ? currentOrders : pastOrders
+  const tabStatuses = tab === 'current' ? CURRENT_STATUSES : PAST_STATUSES
+  const orders = statusFilter === 'all' ? tabOrders : tabOrders.filter(o => o.status === statusFilter)
   const userId = profile?.id ?? ''
   const isStudio = profile?.role === 'studio'
 
@@ -40,11 +64,11 @@ export default function OrdersClient({ profile, currentOrders, pastOrders, stats
           <p style={{ fontSize: '14px', color: 'var(--brown-light)', marginBottom: '24px' }}>Track and manage your sticker orders from Peel & Post Studio.</p>
 
           {/* Tabs */}
-          <div style={{ display: 'flex', gap: '4px', marginBottom: '20px', background: 'var(--white)', border: '1px solid var(--cream-dark)', borderRadius: '11px', padding: '5px', width: 'fit-content' }}>
+          <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', background: 'var(--white)', border: '1px solid var(--cream-dark)', borderRadius: '11px', padding: '5px', width: 'fit-content' }}>
             {(['current', 'past'] as const).map(t => (
               <button
                 key={t}
-                onClick={() => setTab(t)}
+                onClick={() => switchTab(t)}
                 style={{
                   padding: '8px 22px', borderRadius: '7px', border: 'none', cursor: 'pointer',
                   fontFamily: "'Lato', sans-serif", fontSize: '13px', fontWeight: 700,
@@ -61,6 +85,56 @@ export default function OrdersClient({ profile, currentOrders, pastOrders, stats
                 )}
               </button>
             ))}
+          </div>
+
+          {/* Status filter chips */}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '24px' }}>
+            <button
+              onClick={() => setStatusFilter('all')}
+              style={{
+                padding: '6px 16px', borderRadius: '20px', cursor: 'pointer',
+                fontFamily: "'Lato', sans-serif", fontSize: '12px', fontWeight: 700,
+                border: `1.5px solid ${statusFilter === 'all' ? 'var(--brown)' : 'var(--cream-dark)'}`,
+                background: statusFilter === 'all' ? 'var(--brown)' : 'var(--white)',
+                color: statusFilter === 'all' ? 'white' : 'var(--brown-light)',
+                transition: 'all 0.15s',
+              }}
+            >
+              All
+            </button>
+            {tabStatuses.map(s => {
+              const count = tabOrders.filter(o => o.status === s).length
+              const active = statusFilter === s
+              const empty = count === 0
+              return (
+                <button
+                  key={s}
+                  onClick={() => !empty && setStatusFilter(active ? 'all' : s)}
+                  style={{
+                    padding: '6px 16px', borderRadius: '20px',
+                    cursor: empty ? 'default' : 'pointer',
+                    fontFamily: "'Lato', sans-serif", fontSize: '12px', fontWeight: 700,
+                    border: `1.5px solid ${active ? 'var(--terracotta)' : 'var(--cream-dark)'}`,
+                    background: active ? 'var(--terracotta-pale)' : 'var(--white)',
+                    color: active ? 'var(--terracotta)' : empty ? 'var(--cream-dark)' : 'var(--brown-light)',
+                    transition: 'all 0.15s',
+                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  }}
+                >
+                  {STATUS_LABELS[s]}
+                  {count > 0 && (
+                    <span style={{
+                      fontSize: '10px', fontWeight: 700,
+                      background: active ? 'var(--terracotta)' : 'var(--cream-dark)',
+                      color: active ? 'white' : 'var(--brown-mid)',
+                      padding: '0 5px', borderRadius: '8px',
+                    }}>
+                      {count}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
           </div>
 
           {/* Order list */}
