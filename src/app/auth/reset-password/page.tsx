@@ -10,40 +10,45 @@ export default function ResetPasswordPage() {
   const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
   const [ready, setReady] = useState(false)
+  const [linkError, setLinkError] = useState(false)
   const supabase = createClient()
   const router = useRouter()
 
   // Supabase PKCE flow: the reset link arrives as ?code=...&type=recovery
-  // We need to exchange the code ourselves — relying solely on onAuthStateChange
-  // misses the event if it fires before the listener is registered.
+  // We exchange the code explicitly on mount — the PASSWORD_RECOVERY event can
+  // fire before the onAuthStateChange listener registers (race condition).
   useEffect(() => {
     async function bootstrap() {
-      // 1. If there's a code in the URL, exchange it explicitly
       const code = new URLSearchParams(window.location.search).get('code')
+
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code)
         if (!error) {
           setReady(true)
-          // Clean the code out of the URL without a page reload
           window.history.replaceState({}, '', window.location.pathname)
           return
         }
+        // Code exchange failed — expired, already used, or opened in a different browser
+        setLinkError(true)
+        return
       }
-      // 2. Fallback: check if we already have a live recovery session
+
+      // No code in URL — check if a recovery session is already active
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
         setReady(true)
         return
       }
+
+      // Nothing usable — treat as an invalid/expired link
+      setLinkError(true)
     }
 
     bootstrap()
 
-    // 3. Also listen for the event in case the exchange fires asynchronously
+    // Belt-and-suspenders: catch PASSWORD_RECOVERY if it fires asynchronously
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
-        setReady(true)
-      }
+      if (event === 'PASSWORD_RECOVERY') setReady(true)
     })
     return () => subscription.unsubscribe()
   }, [])
@@ -102,14 +107,14 @@ export default function ResetPasswordPage() {
           </h1>
         </div>
 
-        {!ready ? (
+        {linkError ? (
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔐</div>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
             <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#4A3728', margin: '0 0 12px' }}>
-              Verifying your link…
+              Link expired or already used
             </h2>
             <p style={{ fontSize: '14px', color: '#A8896E', margin: '0 0 24px', lineHeight: 1.5 }}>
-              If this takes more than a few seconds, your reset link may have expired.
+              Reset links can only be used once and expire after an hour. Request a fresh one below.
             </p>
             <a
               href="/auth/forgot-password"
@@ -117,6 +122,16 @@ export default function ResetPasswordPage() {
             >
               Request a new link →
             </a>
+          </div>
+        ) : !ready ? (
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔐</div>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', color: '#4A3728', margin: '0 0 12px' }}>
+              Verifying your link…
+            </h2>
+            <p style={{ fontSize: '14px', color: '#A8896E', margin: '0 0 24px', lineHeight: 1.5 }}>
+              Just a moment while we verify your reset link.
+            </p>
           </div>
         ) : (
           <>
