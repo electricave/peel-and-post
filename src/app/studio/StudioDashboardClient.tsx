@@ -135,6 +135,8 @@ export default function StudioDashboardClient({
   const [statusDropdownOpen, setStatusDropdownOpen] = useState<string | null>(null)
   const [trackingModal, setTrackingModal] = useState<{ orderId: string } | null>(null)
   const [trackingInput, setTrackingInput] = useState('')
+  const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set())
+  const [bulkUpdating, setBulkUpdating] = useState(false)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => { setMounted(true) }, [])
@@ -204,6 +206,72 @@ export default function StudioDashboardClient({
     ))
     setTrackingModal(null)
     setTrackingInput('')
+  }
+
+  function toggleSelectOrder(id: string) {
+    setSelectedOrders(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelectAll() {
+    if (selectedOrders.size === filtered.length) {
+      setSelectedOrders(new Set())
+    } else {
+      setSelectedOrders(new Set(filtered.map(o => o.id)))
+    }
+  }
+
+  async function handleBulkStatusUpdate(newStatus: OrderStatus) {
+    if (selectedOrders.size === 0) return
+    setBulkUpdating(true)
+    // For bulk "shipped" we skip tracking (no tracking number in bulk)
+    const ids = Array.from(selectedOrders)
+    await Promise.all(ids.map(id =>
+      fetch('/api/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: id, status: newStatus }),
+      })
+    ))
+    setOrders(prev => prev.map(o =>
+      selectedOrders.has(o.id) ? { ...o, status: newStatus } : o
+    ))
+    setSelectedOrders(new Set())
+    setBulkUpdating(false)
+  }
+
+  function handleExportCSV() {
+    const rows = filtered.filter(o => selectedOrders.has(o.id))
+    const headers = ['Order #', 'Customer', 'Email', 'Company', 'Product', 'Qty', 'Size', 'Shape', 'Finish', 'Turnaround', 'Status', 'Est. Total', 'Final Total', 'Created At']
+    const lines = [
+      headers.join(','),
+      ...rows.map(o => [
+        o.order_number,
+        `"${o.profiles?.full_name ?? ''}"`,
+        `"${o.profiles?.email ?? ''}"`,
+        `"${o.profiles?.company_name ?? ''}"`,
+        `"${o.product}"`,
+        o.quantity,
+        `"${o.size}"`,
+        `"${o.shape}"`,
+        `"${o.finish}"`,
+        `"${o.turnaround}"`,
+        o.status,
+        o.estimated_total ?? '',
+        o.final_total ?? '',
+        `"${formatDate(o.created_at)}"`,
+      ].join(','))
+    ]
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `peel-post-orders-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   function formatDate(iso: string) {
@@ -417,11 +485,86 @@ export default function StudioDashboardClient({
           </div>
         </div>
 
+        {/* Bulk actions bar */}
+        {selectedOrders.size > 0 && (
+          <div style={{
+            padding: '12px 24px',
+            background: 'var(--brown)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 14,
+            flexWrap: 'wrap',
+          }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'white', fontFamily: 'Lato, sans-serif' }}>
+              {selectedOrders.size} order{selectedOrders.size > 1 ? 's' : ''} selected
+            </span>
+            <div style={{ flex: 1 }} />
+            <select
+              disabled={bulkUpdating}
+              defaultValue=""
+              onChange={e => {
+                if (e.target.value) handleBulkStatusUpdate(e.target.value as OrderStatus)
+                e.target.value = ''
+              }}
+              style={{
+                padding: '7px 12px', borderRadius: 8,
+                border: '1px solid rgba(255,255,255,0.2)',
+                background: 'rgba(255,255,255,0.12)', fontSize: 12,
+                color: 'white', fontFamily: 'Lato, sans-serif',
+                cursor: 'pointer', outline: 'none',
+                opacity: bulkUpdating ? 0.5 : 1,
+              }}
+            >
+              <option value="" disabled style={{ color: '#333' }}>Set status…</option>
+              {ALL_STATUSES.filter(s => s !== 'shipped').map(s => (
+                <option key={s} value={s} style={{ color: '#333' }}>{STATUS_CONFIG[s].label}</option>
+              ))}
+            </select>
+            <button
+              onClick={handleExportCSV}
+              disabled={bulkUpdating}
+              style={{
+                padding: '7px 14px', borderRadius: 8,
+                background: 'rgba(255,255,255,0.12)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                color: 'white', fontSize: 12, fontWeight: 700,
+                cursor: 'pointer', fontFamily: 'Lato, sans-serif',
+              }}
+            >
+              ↓ Export CSV
+            </button>
+            <button
+              onClick={() => setSelectedOrders(new Set())}
+              style={{
+                padding: '7px 12px', borderRadius: 8,
+                background: 'transparent',
+                border: '1px solid rgba(255,255,255,0.2)',
+                color: 'rgba(255,255,255,0.7)', fontSize: 12,
+                cursor: 'pointer', fontFamily: 'Lato, sans-serif',
+              }}
+            >
+              ✕ Clear
+            </button>
+            {bulkUpdating && (
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>Updating…</span>
+            )}
+          </div>
+        )}
+
         {/* Table */}
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, fontFamily: 'Lato, sans-serif' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--cream-dark)' }}>
+                <th style={{ padding: '12px 16px', background: 'var(--cream)', width: 40 }}>
+                  <input
+                    type="checkbox"
+                    checked={filtered.length > 0 && selectedOrders.size === filtered.length}
+                    ref={el => { if (el) el.indeterminate = selectedOrders.size > 0 && selectedOrders.size < filtered.length }}
+                    onChange={toggleSelectAll}
+                    style={{ cursor: 'pointer', width: 15, height: 15, accentColor: 'var(--terracotta)' }}
+                  />
+                </th>
                 {['#', 'Customer', 'Product', 'Qty', 'Finish / Shape', 'Total', 'Status', 'Proof', 'Actions'].map(h => (
                   <th key={h} style={{
                     padding: '12px 16px', textAlign: 'left',
@@ -437,7 +580,7 @@ export default function StudioDashboardClient({
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={9} style={{
+                  <td colSpan={10} style={{
                     padding: '48px 24px', textAlign: 'center',
                     color: 'var(--brown-light)', fontSize: 14,
                   }}>
@@ -459,12 +602,24 @@ export default function StudioDashboardClient({
                         key={order.id}
                         style={{
                           borderBottom: '1px solid var(--cream-dark)',
-                          background: idx % 2 === 0 ? 'var(--white)' : 'rgba(247,243,238,0.4)',
+                          background: selectedOrders.has(order.id)
+                            ? 'var(--terracotta-pale)'
+                            : idx % 2 === 0 ? 'var(--white)' : 'rgba(247,243,238,0.4)',
                           transition: 'background 0.15s',
                         }}
-                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--terracotta-pale)')}
-                        onMouseLeave={e => (e.currentTarget.style.background = idx % 2 === 0 ? 'var(--white)' : 'rgba(247,243,238,0.4)')}
+                        onMouseEnter={e => { if (!selectedOrders.has(order.id)) e.currentTarget.style.background = 'var(--terracotta-pale)' }}
+                        onMouseLeave={e => { if (!selectedOrders.has(order.id)) e.currentTarget.style.background = idx % 2 === 0 ? 'var(--white)' : 'rgba(247,243,238,0.4)' }}
                       >
+                        {/* Checkbox */}
+                        <td style={{ padding: '14px 16px' }} onClick={e => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selectedOrders.has(order.id)}
+                            onChange={() => toggleSelectOrder(order.id)}
+                            style={{ cursor: 'pointer', width: 15, height: 15, accentColor: 'var(--terracotta)' }}
+                          />
+                        </td>
+
                         {/* Order number */}
                         <td style={{ padding: '14px 16px' }}>
                           <span style={{ fontWeight: 700, color: 'var(--brown)', fontSize: 13 }}>
@@ -632,7 +787,7 @@ export default function StudioDashboardClient({
                       {/* ── Expanded detail row ─────────────────────── */}
                       {isExpanded && (
                         <tr key={`${order.id}-expanded`}>
-                          <td colSpan={9} style={{ padding: 0, background: 'var(--cream)' }}>
+                          <td colSpan={10} style={{ padding: 0, background: 'var(--cream)' }}>
                             <div style={{
                               padding: '20px 24px',
                               borderBottom: '1px solid var(--cream-dark)',
