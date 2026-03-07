@@ -23,7 +23,7 @@ export default function MessagesClient({ profile, conversations, stats, userId }
       <Sidebar profile={profile} unreadMessages={stats.unreadMessages} pendingProofs={stats.proofsToReview} />
 
       <main style={{ marginLeft: '260px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <Topbar pendingProofs={stats.proofsToReview} onNewOrder={() => setOrderModalOpen(true)} />
+        <Topbar pendingProofs={stats.proofsToReview} onNewOrder={() => setOrderModalOpen(true)} hideNewOrder={profile?.role === 'studio'} />
 
         <div style={{ padding: '36px 40px 0', flexShrink: 0 }}>
           <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '28px', fontWeight: 700, color: 'var(--brown)', marginBottom: '16px' }}>Messages</h2>

@@ -58,6 +58,7 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage, o
   const [open, setOpen] = useState(false)
   const [proofs, setProofs] = useState<Proof[]>([])
   const [loadingProofs, setLoadingProofs] = useState(false)
+  const [viewingProof, setViewingProof] = useState(false)
   const [reviewingProof, setReviewingProof] = useState<string | null>(null)
   const [feedback, setFeedback] = useState('')
   const [checkingOut, setCheckingOut] = useState(false)
@@ -113,6 +114,21 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage, o
     } catch (err: any) {
       toast.error(err.message || 'Could not start checkout')
       setCheckingOut(false)
+    }
+  }
+
+  async function handleViewProof() {
+    const latestProof = proofs[0]
+    if (!latestProof) return
+    setViewingProof(true)
+    try {
+      const { data } = await supabase.storage.from('proofs').createSignedUrl(latestProof.file_url, 300)
+      if (data?.signedUrl) window.open(data.signedUrl, '_blank')
+      else toast.error('Could not generate proof link')
+    } catch {
+      toast.error('Could not open proof')
+    } finally {
+      setViewingProof(false)
     }
   }
 
@@ -174,6 +190,14 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage, o
           <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--brown-light)', marginBottom: '3px' }}>
             Order #{order.order_number}
           </div>
+          {isStudio && order.profiles && (
+            <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--brown-mid)', marginBottom: '2px' }}>
+              {order.profiles.full_name || order.profiles.email}
+              {order.profiles.company_name && (
+                <span style={{ fontWeight: 400, color: 'var(--brown-light)' }}> · {order.profiles.company_name}</span>
+              )}
+            </div>
+          )}
           <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '16px', fontWeight: 600, color: 'var(--brown)', marginBottom: '4px' }}>
             {order.product}
           </div>
@@ -400,13 +424,22 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage, o
           </div>
 
           {/* Action buttons */}
-          <div style={{ padding: '14px 24px', borderTop: '1px solid var(--cream-dark)', display: 'flex', gap: '10px', background: 'var(--cream)' }}>
+          <div style={{ padding: '14px 24px', borderTop: '1px solid var(--cream-dark)', display: 'flex', gap: '10px', background: 'var(--cream)', flexWrap: 'wrap' }}>
             <button
               onClick={onMessage}
               style={{ padding: '9px 18px', borderRadius: '8px', background: 'transparent', border: '1.5px solid var(--cream-dark)', color: 'var(--brown-mid)', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
             >
               💬 Message Studio
             </button>
+            {proofs.length > 0 && (
+              <button
+                onClick={handleViewProof}
+                disabled={viewingProof}
+                style={{ padding: '9px 18px', borderRadius: '8px', background: 'transparent', border: '1.5px solid var(--cream-dark)', color: 'var(--brown-mid)', fontSize: '13px', fontWeight: 700, cursor: viewingProof ? 'not-allowed' : 'pointer', opacity: viewingProof ? 0.6 : 1 }}
+              >
+                🖼 View Proof
+              </button>
+            )}
             {!isStudio && ['shipped', 'delivered', 'cancelled'].includes(order.status) && onReorder && (
               <button
                 onClick={e => { e.stopPropagation(); onReorder(order) }}

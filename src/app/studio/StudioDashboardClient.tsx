@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import type { Order, Proof, OrderStatus } from '@/types'
+import type { Order, Proof, OrderStatus, Profile } from '@/types'
+import Sidebar from '@/components/layout/Sidebar'
 
 type ArtworkFile = {
   order_id: string
@@ -27,6 +28,7 @@ type Conversation = {
 }
 
 type Props = {
+  profile: Profile | null
   studioName: string
   orders: Order[]
   proofs: Proof[]
@@ -117,6 +119,7 @@ function StatCard({ label, value, sub, accent }: {
 }
 
 export default function StudioDashboardClient({
+  profile,
   studioName,
   orders: initialOrders,
   proofs,
@@ -304,14 +307,14 @@ export default function StudioDashboardClient({
   if (!mounted) return null
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'var(--cream)',
-      marginLeft: 260,
-      padding: '36px 40px',
-      fontFamily: 'Lato, sans-serif',
-      animation: 'fadeIn 0.3s ease',
-    }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--cream)', fontFamily: 'Lato, sans-serif' }}>
+      <Sidebar profile={profile} unreadMessages={unreadCount} pendingProofs={0} />
+      <div style={{
+        marginLeft: 260,
+        flex: 1,
+        padding: '36px 40px',
+        animation: 'fadeIn 0.3s ease',
+      }}>
 
       {/* ── Header ────────────────────────────────────────── */}
       <div style={{ marginBottom: 32 }}>
@@ -1026,6 +1029,7 @@ export default function StudioDashboardClient({
         </div>
       )}
 
+      </div>
     </div>
   )
 }

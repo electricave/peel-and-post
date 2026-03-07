@@ -14,7 +14,7 @@ export default async function StudioPage() {
   // Verify studio role
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, full_name')
+    .select('id, role, full_name, email, company_name, avatar_url, created_at, updated_at')
     .eq('id', user.id)
     .single()
 
@@ -64,6 +64,7 @@ export default async function StudioPage() {
 
   return (
     <StudioDashboardClient
+      profile={profile as any}
       studioName={profile.full_name || 'Studio'}
       orders={orders || []}
       proofs={proofs || []}

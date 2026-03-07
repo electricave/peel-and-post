@@ -4,8 +4,11 @@
 
 import { useState } from 'react';
 import { ProductType, FinishVariant, SizeVariant, QuantityBreak, RushOption, formatCurrency } from '@/lib/pricing';
+import Sidebar from '@/components/layout/Sidebar';
+import type { Profile } from '@/types';
 
 interface Props {
+  profile: Profile | null;
   initialProducts: ProductType[];
   initialFinishes: FinishVariant[];
   initialSizes: SizeVariant[];
@@ -15,7 +18,7 @@ interface Props {
 
 type Tab = 'products' | 'finishes' | 'sizes' | 'quantity' | 'rush';
 
-export default function PricingClient({ initialProducts, initialFinishes, initialSizes, initialBreaks, initialRush }: Props) {
+export default function PricingClient({ profile, initialProducts, initialFinishes, initialSizes, initialBreaks, initialRush }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('products');
   const [products, setProducts] = useState(initialProducts);
   const [finishes, setFinishes] = useState(initialFinishes);
@@ -125,7 +128,9 @@ export default function PricingClient({ initialProducts, initialFinishes, initia
   };
 
   return (
-    <div style={{ fontFamily: 'Lato, sans-serif' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--cream)', fontFamily: 'Lato, sans-serif' }}>
+      <Sidebar profile={profile} unreadMessages={0} pendingProofs={0} />
+      <div style={{ marginLeft: 260, flex: 1, padding: '36px 40px' }}>
       {/* Toast */}
       {toast && (
         <div style={{
@@ -412,6 +417,7 @@ export default function PricingClient({ initialProducts, initialFinishes, initia
             )}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

@@ -103,7 +103,7 @@ export default function Sidebar({
         flexShrink: 0,
       }}>
         <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '3px', textTransform: 'uppercase', color: 'var(--brown-light)', marginBottom: '4px' }}>
-          Customer Portal
+          {isStudio ? 'Studio Portal' : 'Customer Portal'}
         </div>
         <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: '22px', fontWeight: 700, color: 'var(--cream)', lineHeight: 1.2 }}>
           Peel & <span style={{ color: 'var(--terracotta-light)' }}>Post</span> Studio

@@ -12,7 +12,7 @@ export default async function PricingPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('id, role, full_name, email, company_name, avatar_url, created_at, updated_at')
     .eq('id', user.id)
     .single();
 
@@ -28,6 +28,7 @@ export default async function PricingPage() {
 
   return (
     <PricingClient
+      profile={profile as any}
       initialProducts={products.data ?? []}
       initialFinishes={finishes.data ?? []}
       initialSizes={sizes.data ?? []}

@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation'
 export default function Topbar({
   pendingProofs = 0,
   onNewOrder,
+  hideNewOrder = false,
 }: {
   pendingProofs?: number
   onNewOrder?: () => void
+  hideNewOrder?: boolean
 }) {
   const router = useRouter()
 
@@ -45,12 +47,14 @@ export default function Topbar({
           >
             💬 Contact Studio
           </button>
-          <button
-            onClick={onNewOrder}
-            style={{ background: 'var(--terracotta)', color: 'white', border: 'none', padding: '9px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
-          >
-            + New Order
-          </button>
+          {!hideNewOrder && (
+            <button
+              onClick={onNewOrder}
+              style={{ background: 'var(--terracotta)', color: 'white', border: 'none', padding: '9px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
+            >
+              + New Order
+            </button>
+          )}
         </div>
       </div>
     </div>
