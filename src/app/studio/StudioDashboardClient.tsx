@@ -132,8 +132,11 @@ export default function StudioDashboardClient({
 
   const [orders, setOrders] = useState<Order[]>(initialOrders)
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all')
   const [updatingOrder, setUpdatingOrder] = useState<string | null>(null)
+  // Status groups collapsed by default for terminal statuses
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<OrderStatus>>(
+    new Set(['delivered', 'cancelled'] as OrderStatus[])
+  )
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null)
   const [statusDropdownOpen, setStatusDropdownOpen] = useState<string | null>(null)
   const [trackingModal, setTrackingModal] = useState<{ orderId: string } | null>(null)
@@ -172,16 +175,29 @@ export default function StudioDashboardClient({
 
   // ── Filtered table ─────────────────────────────────────────
   const filtered = orders.filter(o => {
-    const matchesStatus = statusFilter === 'all' || o.status === statusFilter
     const q = search.toLowerCase()
-    const matchesSearch = !q
+    return !q
       || String(o.order_number).includes(q)
       || (o.profiles?.full_name || '').toLowerCase().includes(q)
       || (o.profiles?.email || '').toLowerCase().includes(q)
       || (o.profiles?.company_name || '').toLowerCase().includes(q)
       || o.product.toLowerCase().includes(q)
-    return matchesStatus && matchesSearch
   })
+
+  // Group filtered orders by status, in lifecycle order
+  const ordersByStatus: Partial<Record<OrderStatus, Order[]>> = {}
+  for (const status of ALL_STATUSES) {
+    const group = filtered.filter(o => o.status === status)
+    if (group.length > 0) ordersByStatus[status] = group
+  }
+
+  function toggleGroup(status: OrderStatus) {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev)
+      next.has(status) ? next.delete(status) : next.add(status)
+      return next
+    })
+  }
 
   // ── Helpers ────────────────────────────────────────────────
   async function updateStatus(orderId: string, newStatus: OrderStatus, trackingNumber?: string) {
@@ -450,7 +466,7 @@ export default function StudioDashboardClient({
           }}>
             All Orders
           </h2>
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
             <div style={{ position: 'relative' }}>
               <span style={{
                 position: 'absolute', left: 12, top: '50%',
@@ -470,21 +486,6 @@ export default function StudioDashboardClient({
                 }}
               />
             </div>
-            <select
-              value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value as OrderStatus | 'all')}
-              style={{
-                padding: '9px 14px', borderRadius: 10,
-                border: '1px solid var(--cream-dark)',
-                background: 'var(--cream)', fontSize: 13, color: 'var(--brown)',
-                fontFamily: 'Lato, sans-serif', outline: 'none', cursor: 'pointer',
-              }}
-            >
-              <option value="all">All Statuses</option>
-              {ALL_STATUSES.map(s => (
-                <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
-              ))}
-            </select>
           </div>
         </div>
 
@@ -587,20 +588,68 @@ export default function StudioDashboardClient({
                     padding: '48px 24px', textAlign: 'center',
                     color: 'var(--brown-light)', fontSize: 14,
                   }}>
-                    No orders match your filters.
+                    No orders match your search.
                   </td>
                 </tr>
               ) : (
-                filtered.map((order, idx) => {
-                  const orderProofs  = getOrderProofs(order.id)
-                  const latestProof  = orderProofs[0]
-                  const orderArtwork = getOrderArtwork(order.id)
-                  const unread       = getUnreadForOrder(order.id)
-                  const isExpanded   = expandedOrder === order.id
-                  const isUpdating   = updatingOrder === order.id
+                ALL_STATUSES.map(status => {
+                  const group = ordersByStatus[status]
+                  if (!group || group.length === 0) return null
+                  const cfg = STATUS_CONFIG[status]
+                  const isCollapsed = collapsedGroups.has(status)
 
                   return (
                     <>
+                      {/* ── Status group header row ──────────────── */}
+                      <tr
+                        key={`group-${status}`}
+                        onClick={() => toggleGroup(status)}
+                        style={{ cursor: 'pointer', userSelect: 'none' }}
+                      >
+                        <td colSpan={10} style={{
+                          padding: '10px 20px',
+                          background: cfg.bg,
+                          borderTop: '2px solid var(--cream-dark)',
+                          borderBottom: isCollapsed ? '1px solid var(--cream-dark)' : 'none',
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <span style={{
+                              fontSize: 11, fontWeight: 700, letterSpacing: '0.1em',
+                              textTransform: 'uppercase', color: cfg.color,
+                            }}>
+                              {cfg.label}
+                            </span>
+                            <span style={{
+                              background: cfg.color, color: 'white',
+                              borderRadius: 20, fontSize: 10, fontWeight: 700,
+                              padding: '1px 8px',
+                            }}>
+                              {group.length}
+                            </span>
+                            <span style={{
+                              marginLeft: 'auto', fontSize: 11,
+                              color: cfg.color, fontWeight: 700,
+                              transition: 'transform 0.2s',
+                              display: 'inline-block',
+                              transform: isCollapsed ? 'rotate(-90deg)' : 'none',
+                            }}>
+                              ▼
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+
+                      {/* ── Order rows ──────────────────────────── */}
+                      {!isCollapsed && group.map((order, idx) => {
+                        const orderProofs  = getOrderProofs(order.id)
+                        const latestProof  = orderProofs[0]
+                        const orderArtwork = getOrderArtwork(order.id)
+                        const unread       = getUnreadForOrder(order.id)
+                        const isExpanded   = expandedOrder === order.id
+                        const isUpdating   = updatingOrder === order.id
+
+                        return (
+                          <>
                       <tr
                         key={order.id}
                         style={{
@@ -948,6 +997,9 @@ export default function StudioDashboardClient({
                       )}
                     </>
                   )
+                      })}
+                    </>
+                  )
                 })
               )}
             </tbody>
@@ -958,21 +1010,10 @@ export default function StudioDashboardClient({
         <div style={{
           padding: '12px 24px', borderTop: '1px solid var(--cream-dark)',
           background: 'var(--cream)', fontSize: 12, color: 'var(--brown-light)',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         }}>
-          <span>Showing {filtered.length} of {orders.length} orders</span>
-          {statusFilter !== 'all' && (
-            <button
-              onClick={() => setStatusFilter('all')}
-              style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                color: 'var(--terracotta)', fontSize: 12, fontWeight: 600,
-                fontFamily: 'Lato, sans-serif',
-              }}
-            >
-              Clear filter ✕
-            </button>
-          )}
+          {search
+            ? `${filtered.length} of ${orders.length} orders match "${search}"`
+            : `${orders.length} total orders`}
         </div>
       </div>
 
