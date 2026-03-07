@@ -520,31 +520,35 @@ export default function StudioDashboardClient({
             {tabStatuses.map(s => {
               const cfg = STATUS_CONFIG[s]
               const count = orders.filter(o => o.status === s).length
-              if (count === 0) return null
               const active = statusFilter === s
+              const empty = count === 0
               return (
                 <button
                   key={s}
-                  onClick={() => setStatusFilter(active ? 'all' : s)}
+                  onClick={() => !empty && setStatusFilter(active ? 'all' : s)}
                   style={{
-                    padding: '5px 14px', borderRadius: 20, cursor: 'pointer',
+                    padding: '5px 14px', borderRadius: 20,
+                    cursor: empty ? 'default' : 'pointer',
                     fontFamily: 'Lato, sans-serif', fontSize: 12, fontWeight: 700,
                     border: `1.5px solid ${active ? cfg.color : 'var(--cream-dark)'}`,
                     background: active ? cfg.bg : 'transparent',
-                    color: active ? cfg.color : 'var(--brown-light)',
+                    color: active ? cfg.color : empty ? 'var(--cream-dark)' : 'var(--brown-light)',
+                    opacity: empty ? 0.5 : 1,
                     transition: 'all 0.15s',
                     display: 'inline-flex', alignItems: 'center', gap: 5,
                   }}
                 >
                   {cfg.label}
-                  <span style={{
-                    fontSize: 10, fontWeight: 700,
-                    background: active ? cfg.color : 'var(--cream-dark)',
-                    color: active ? 'white' : 'var(--brown-mid)',
-                    padding: '0px 5px', borderRadius: 8,
-                  }}>
-                    {count}
-                  </span>
+                  {count > 0 && (
+                    <span style={{
+                      fontSize: 10, fontWeight: 700,
+                      background: active ? cfg.color : 'var(--cream-dark)',
+                      color: active ? 'white' : 'var(--brown-mid)',
+                      padding: '0px 5px', borderRadius: 8,
+                    }}>
+                      {count}
+                    </span>
+                  )}
                 </button>
               )
             })}
