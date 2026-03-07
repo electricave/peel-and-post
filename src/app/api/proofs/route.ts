@@ -67,11 +67,11 @@ export async function PATCH(request: NextRequest) {
   if (order) {
     // Notify the customer
     const notifTitle = action === 'approved'
-      ? '✓ Proof approved — heading to print!'
+      ? '✓ Proof approved — complete payment to start production'
       : '↩ Revision request sent'
 
     const notifBody = action === 'approved'
-      ? `Your ${order.product} order is now heading to production.`
+      ? `Your ${order.product} proof is approved. Complete payment to enter production.`
       : `Your revision notes have been sent to the studio.`
 
     await supabase

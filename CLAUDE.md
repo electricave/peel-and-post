@@ -54,6 +54,11 @@ pending → artwork_needed → in_review → proof_sent → proof_approved → p
 
 The DB constraint `orders_status_check` enforces this list. **If you add a new status, update the constraint too.**
 
+### Payment & approval flow (updated)
+The customer-facing proof "Approve" button is now **"Approve & Pay"** — it marks the proof approved then immediately opens Stripe checkout. The webhook sets status directly to `in_production` (skipping `paid` as a customer-visible state). `paid_at` is still recorded for financial records.
+
+`proof_approved` and `paid` remain valid statuses for the **studio manual override** path (status dropdown). This supports future non-Stripe payment methods where the studio confirms payment manually and sets `in_production` themselves.
+
 ---
 
 ## Key Files
@@ -121,8 +126,8 @@ CLAUDE.md                                  # This file
 
 ## Stripe
 
-- Checkout triggered from `OrderCard` when `status === 'proof_approved'`
-- Webhook at `/api/webhooks/stripe` sets `status = 'paid'` and records `paid_at`
+- Checkout triggered from `OrderCard` via **"Approve & Pay"** button on pending proofs
+- Webhook at `/api/webhooks/stripe` sets `status = 'in_production'` and records `paid_at`
 - Webhook secret: `STRIPE_WEBHOOK_SECRET` env var (set in Vercel)
 - After payment, customer is redirected to `/orders/success?session_id=...`
 - Success page uses `<a href="/orders">` (not `<Link>`) to force a hard reload and clear stale cache
@@ -171,6 +176,12 @@ These features were identified during Phase 1 development and should be addresse
 | F2 | Shipment tracking | Studio intercepts "shipped" status change with a tracking number modal. Customer `OrderCard` shows "Track Shipment" link with regex-based carrier detection (UPS/FedEx/USPS/DHL/parcelsapp fallback). |
 | F3 | Studio analytics dashboard | `/studio/analytics` — server-side Supabase aggregation (no HTTP self-fetch). Stat cards + pure SVG bar charts for orders/revenue over 6 months, horizontal bars for status and product breakdown. |
 | F4 | Bulk order management | Checkboxes on studio orders table with select-all (indeterminate state). Bulk actions bar: set status (parallel API calls) + Export CSV. Selected rows highlighted terracotta-pale. |
+
+---
+
+## Backlog — Phase 3 (Low Priority)
+
+- [ ] **Alternative payment methods** — Add support for cryptocurrency (including stablecoins), Venmo, and PayPal as payment options alongside Stripe. Studio will manually confirm receipt and set the order to `in_production` via the status dropdown. UI should allow customers to signal which payment method they intend to use so the studio knows what to look for.
 
 ---
 

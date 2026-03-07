@@ -117,6 +117,40 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage, o
     }
   }
 
+  async function handleApproveAndPay(proofId: string) {
+    // Step 1 — mark proof as approved
+    try {
+      const res = await fetch('/api/proofs', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ proof_id: proofId, action: 'approved', feedback }),
+      })
+      if (!res.ok) throw new Error()
+      setProofs(prev => prev.map(p => p.id === proofId ? { ...p, status: 'approved' } : p))
+      setReviewingProof(null)
+      setFeedback('')
+      onProofAction?.()
+    } catch {
+      toast.error('Could not approve proof')
+      return
+    }
+    // Step 2 — go straight to Stripe checkout
+    setCheckingOut(true)
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: order.id }),
+      })
+      const { url, error } = await res.json()
+      if (error) throw new Error(error)
+      window.location.href = url
+    } catch (err: any) {
+      toast.error(err.message || 'Could not start checkout')
+      setCheckingOut(false)
+    }
+  }
+
   async function handleViewProof(fileUrl: string) {
     setViewingProof(true)
     try {
@@ -389,7 +423,7 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage, o
                               style={{ padding: '8px 12px', borderRadius: '8px', border: '1.5px solid var(--cream-dark)', background: 'var(--cream)', fontSize: '13px', resize: 'none', outline: 'none' }}
                             />
                             <div style={{ display: 'flex', gap: '6px' }}>
-                              <button onClick={() => handleProofAction(proof.id, 'approved')} style={{ flex: 1, padding: '7px', borderRadius: '7px', background: 'var(--sage)', color: 'white', border: 'none', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>✓ Approve</button>
+                              <button onClick={() => handleApproveAndPay(proof.id)} disabled={checkingOut} style={{ flex: 1, padding: '7px', borderRadius: '7px', background: checkingOut ? '#9ab89a' : 'var(--sage)', color: 'white', border: 'none', fontSize: '12px', fontWeight: 700, cursor: checkingOut ? 'not-allowed' : 'pointer' }}>{checkingOut ? 'Redirecting…' : '✓ Approve & Pay'}</button>
                               <button onClick={() => handleProofAction(proof.id, 'revision')} style={{ flex: 1, padding: '7px', borderRadius: '7px', background: 'transparent', border: '1.5px solid var(--cream-dark)', color: 'var(--brown-mid)', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>↩ Revise</button>
                               <button onClick={() => setReviewingProof(null)} style={{ padding: '7px 10px', borderRadius: '7px', background: 'transparent', border: 'none', color: 'var(--brown-light)', cursor: 'pointer' }}>✕</button>
                             </div>

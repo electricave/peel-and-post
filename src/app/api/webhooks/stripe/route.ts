@@ -35,11 +35,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing metadata' }, { status: 400 })
     }
 
-    // Update order to paid
+    // Payment confirmed — move straight to in_production (paid_at still recorded for financial records)
     await supabase
       .from('orders')
       .update({
-        status: 'paid',
+        status: 'in_production',
         stripe_session_id: session.id,
         stripe_payment_intent_id: session.payment_intent as string,
         paid_at: new Date().toISOString(),
