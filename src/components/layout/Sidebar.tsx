@@ -12,9 +12,9 @@ const NAV_ITEMS = [
 ]
 
 const STUDIO_NAV_ITEMS = [
-  { id: 'studio',     label: 'Studio Dashboard', icon: '⚙', href: '/studio' },
-  { id: 'pricing',    label: 'Pricing Rules',     icon: '◈', href: '/studio/pricing' },
-  { id: 'analytics',  label: 'Analytics',         icon: '◉', href: '/studio/analytics' },
+  { id: 'orders',    label: 'Orders',    icon: '◈', href: '/studio' },
+  { id: 'messages',  label: 'Messages',  icon: '◎', href: '/messages' },
+  { id: 'analytics', label: 'Analytics', icon: '◉', href: '/studio/analytics' },
 ]
 
 export default function Sidebar({
@@ -124,28 +124,16 @@ export default function Sidebar({
       </div>
 
       {/* Nav */}
-      <nav style={{ padding: '8px 12px', flex: 1 }}>
-
-        {/* Studio section — only visible to studio role */}
-        {isStudio && (
-          <>
-            <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'var(--brown-light)', padding: '16px 12px 8px' }}>
-              Studio
-            </div>
-            {STUDIO_NAV_ITEMS.map(item => (
-              <NavItem key={item.id} item={item} />
-            ))}
-            <div style={{ margin: '12px 12px 0', borderTop: '1px solid rgba(255,255,255,0.08)' }} />
-          </>
+      <nav style={{ padding: '16px 12px', flex: 1 }}>
+        {isStudio ? (
+          STUDIO_NAV_ITEMS.map(item => (
+            <NavItem key={item.id} item={item} badge={badges[item.id]} />
+          ))
+        ) : (
+          NAV_ITEMS.map(item => (
+            <NavItem key={item.id} item={item} badge={badges[item.id]} />
+          ))
         )}
-
-        {/* Customer section */}
-        <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'var(--brown-light)', padding: '16px 12px 8px' }}>
-          My Portal
-        </div>
-        {NAV_ITEMS.map(item => (
-          <NavItem key={item.id} item={item} badge={badges[item.id]} />
-        ))}
       </nav>
 
       {/* User footer */}
