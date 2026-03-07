@@ -180,45 +180,76 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage, o
   return (
     <div style={{ background: 'var(--white)', borderRadius: '14px', border: '1px solid var(--cream-dark)', boxShadow: 'var(--shadow-card)', marginBottom: '12px', overflow: 'hidden', transition: 'box-shadow 0.2s' }}>
       {/* Summary row - always visible */}
-      <div onClick={toggleOpen} style={{ padding: '18px 24px', display: 'flex', alignItems: 'center', gap: '16px', cursor: 'pointer', userSelect: 'none' }}>
-        <div style={{ width: '48px', height: '48px', borderRadius: '10px', background: 'linear-gradient(135deg, var(--terracotta-pale), var(--cream-dark))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', flexShrink: 0 }}>
-          {emoji}
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--brown-light)', marginBottom: '3px' }}>
-            Order #{order.order_number}
+      <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+        {/* Clickable info area — expands card */}
+        <div onClick={toggleOpen} style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: 0, cursor: 'pointer', userSelect: 'none' }}>
+          <div style={{ width: '44px', height: '44px', borderRadius: '10px', background: 'linear-gradient(135deg, var(--terracotta-pale), var(--cream-dark))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}>
+            {emoji}
           </div>
-          {isStudio && order.profiles && (
-            <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--brown-mid)', marginBottom: '2px' }}>
-              {order.profiles.full_name || order.profiles.email}
-              {order.profiles.company_name && (
-                <span style={{ fontWeight: 400, color: 'var(--brown-light)' }}> · {order.profiles.company_name}</span>
-              )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--brown-light)', marginBottom: '2px' }}>
+              Order #{order.order_number}
             </div>
-          )}
-          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '16px', fontWeight: 600, color: 'var(--brown)', marginBottom: '4px' }}>
-            {order.product}
-          </div>
-          <div style={{ fontSize: '12px', color: 'var(--brown-light)' }}>
-            {order.quantity} units · Placed {new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-            {order.estimated_ship_at && ` · Est. ship ${new Date(order.estimated_ship_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
+            {isStudio && order.profiles && (
+              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--brown-mid)', marginBottom: '1px' }}>
+                {order.profiles.full_name || order.profiles.email}
+                {order.profiles.company_name && (
+                  <span style={{ fontWeight: 400, color: 'var(--brown-light)' }}> · {order.profiles.company_name}</span>
+                )}
+              </div>
+            )}
+            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '15px', fontWeight: 600, color: 'var(--brown)', marginBottom: '3px' }}>
+              {order.product}
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--brown-light)' }}>
+              {order.quantity} units · {new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              {order.estimated_ship_at && ` · Est. ship ${new Date(order.estimated_ship_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
+            </div>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
-          {/* Artwork needed badge in summary row */}
+
+        {/* Right side: status + quick actions (non-expanding) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+          <StatusPill status={order.status} />
+
+          {/* Artwork needed badge */}
           {!isStudio && order.status === 'artwork_needed' && (
             <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: '#FEF3CD', color: '#7A5C00', whiteSpace: 'nowrap' }}>
               🎨 Upload Artwork
             </span>
           )}
-          {/* Pay Now badge in summary row */}
+
+          {/* Pay Now badge */}
           {showPayNow && (
             <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: '#F2E0D5', color: '#C4714A', whiteSpace: 'nowrap' }}>
               💳 Payment Due
             </span>
           )}
-          <StatusPill status={order.status} />
-          <span style={{ fontSize: '11px', color: 'var(--brown-light)', transition: 'transform 0.25s', display: 'inline-block', transform: open ? 'rotate(180deg)' : 'none' }}>▼</span>
+
+          {/* Quick action buttons — visible on collapsed card, stopPropagation so they don't expand */}
+          {order.tracking_number && (
+            <a
+              href={getTrackingUrl(order.tracking_number)}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={e => e.stopPropagation()}
+              style={{ padding: '6px 14px', borderRadius: '7px', background: 'transparent', border: '1.5px solid var(--cream-dark)', color: 'var(--brown-mid)', fontSize: '12px', fontWeight: 700, cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap' }}
+            >
+              📦 Track
+            </a>
+          )}
+
+          <button
+            onClick={e => { e.stopPropagation(); onMessage?.() }}
+            style={{ padding: '6px 14px', borderRadius: '7px', background: 'transparent', border: '1.5px solid var(--cream-dark)', color: 'var(--brown-mid)', fontSize: '12px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
+          >
+            {isStudio ? '💬 Message' : '💬 Message'}
+          </button>
+
+          {/* Expand chevron */}
+          <div onClick={toggleOpen} style={{ cursor: 'pointer', padding: '4px 6px', color: 'var(--brown-light)', fontSize: '11px', transition: 'transform 0.25s', display: 'inline-block', transform: open ? 'rotate(180deg)' : 'none', userSelect: 'none' }}>
+            ▼
+          </div>
         </div>
       </div>
 
@@ -467,12 +498,6 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage, o
 
           {/* Action buttons */}
           <div style={{ padding: '14px 24px', borderTop: '1px solid var(--cream-dark)', display: 'flex', gap: '10px', background: 'var(--cream)', flexWrap: 'wrap' }}>
-            <button
-              onClick={onMessage}
-              style={{ padding: '9px 18px', borderRadius: '8px', background: 'transparent', border: '1.5px solid var(--cream-dark)', color: 'var(--brown-mid)', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
-            >
-              {isStudio ? '💬 Message Customer' : '💬 Message Studio'}
-            </button>
             {!isStudio && ['shipped', 'delivered', 'cancelled'].includes(order.status) && onReorder && (
               <button
                 onClick={e => { e.stopPropagation(); onReorder(order) }}
@@ -480,17 +505,6 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage, o
               >
                 🔁 Reorder
               </button>
-            )}
-            {order.tracking_number && (
-              <a
-                href={getTrackingUrl(order.tracking_number)}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}
-                style={{ padding: '9px 18px', borderRadius: '8px', background: 'transparent', border: '1.5px solid var(--cream-dark)', color: 'var(--brown-mid)', fontSize: '13px', fontWeight: 700, cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-              >
-                📦 Track Shipment
-              </a>
             )}
             {['paid', 'in_production', 'shipped', 'delivered'].includes(order.status) && (
               <a

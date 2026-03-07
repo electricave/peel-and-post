@@ -44,7 +44,9 @@ export default function Sidebar({
   }
 
   function NavItem({ item, badge }: { item: typeof NAV_ITEMS[0], badge?: number }) {
-    const isActive = pathname.startsWith(item.href)
+    const isActive = item.href === '/studio'
+      ? pathname === '/studio'
+      : pathname.startsWith(item.href)
     return (
       <div
         onClick={() => router.push(item.href)}
