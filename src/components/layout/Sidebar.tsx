@@ -135,35 +135,6 @@ export default function Sidebar({
             {STUDIO_NAV_ITEMS.map(item => (
               <NavItem key={item.id} item={item} />
             ))}
-            {/* Customer portal shortcut */}
-            <a
-              href="/dashboard"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                padding: '10px 12px',
-                borderRadius: '8px',
-                color: 'rgba(247,243,238,0.45)',
-                fontSize: '13px',
-                fontWeight: 500,
-                textDecoration: 'none',
-                marginTop: '4px',
-                border: '1px solid rgba(255,255,255,0.08)',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLAnchorElement).style.color = 'rgba(247,243,238,0.8)'
-                ;(e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(255,255,255,0.2)'
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLAnchorElement).style.color = 'rgba(247,243,238,0.45)'
-                ;(e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(255,255,255,0.08)'
-              }}
-            >
-              <span style={{ width: '18px', textAlign: 'center', fontSize: '14px', flexShrink: 0 }}>↗</span>
-              View Customer Portal
-            </a>
             <div style={{ margin: '12px 12px 0', borderTop: '1px solid rgba(255,255,255,0.08)' }} />
           </>
         )}
