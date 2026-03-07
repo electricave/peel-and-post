@@ -3,8 +3,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { sendStatusEmail } from '@/lib/email'
 import type { OrderStatus } from '@/types'
 
-// Status transitions the studio is allowed to set via PATCH
-const STUDIO_STATUSES: OrderStatus[] = ['in_review', 'in_production', 'shipped', 'delivered', 'cancelled']
+// All valid order statuses — studio can manually set any of these via the dropdown
+const STUDIO_STATUSES: OrderStatus[] = [
+  'pending', 'artwork_needed', 'in_review', 'proof_sent',
+  'proof_approved', 'paid', 'in_production', 'shipped', 'delivered', 'cancelled',
+]
 
 // GET /api/orders — list orders for the current user
 export async function GET(request: NextRequest) {
