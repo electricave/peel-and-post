@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 
 export default function LoginPage() {
@@ -12,7 +11,6 @@ export default function LoginPage() {
   const [fullName, setFullName] = useState('')
   const [companyName, setCompanyName] = useState('')
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
   const supabase = createClient()
 
   async function handleSubmit(e: React.FormEvent) {
@@ -21,10 +19,12 @@ export default function LoginPage() {
 
     try {
       if (mode === 'login') {
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
-        router.push('/dashboard')
-        router.refresh()
+        // Full reload so the session cookie is set before the server component renders.
+        // router.push() causes a hydration mismatch because the cookie isn't propagated yet.
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single()
+        window.location.href = profile?.role === 'studio' ? '/studio' : '/dashboard'
       } else {
         const { error } = await supabase.auth.signUp({
           email,
