@@ -70,22 +70,23 @@ export default function ArtworkUploader({
         continue;
       }
 
-      const { data: record, error: dbError } = await supabase
-        .from('artwork_files')
-        .insert({
+      const res = await fetch('/api/artwork', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           order_id: orderId,
-          user_id: userId,
           file_name: file.name,
           file_path: storagePath,
           file_size: file.size,
           mime_type: file.type,
-        })
-        .select()
-        .single();
+        }),
+      });
 
-      if (dbError) {
-        setError(`Uploaded but failed to save record: ${dbError.message}`);
+      if (!res.ok) {
+        const { error } = await res.json();
+        setError(`Uploaded but failed to save record: ${error}`);
       } else {
+        const { data: record } = await res.json();
         setFiles(prev => [record as ArtworkFile, ...prev]);
       }
     }

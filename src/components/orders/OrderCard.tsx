@@ -205,6 +205,12 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage, o
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+          {/* Artwork needed badge in summary row */}
+          {!isStudio && order.status === 'artwork_needed' && (
+            <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: '#FEF3CD', color: '#7A5C00', whiteSpace: 'nowrap' }}>
+              🎨 Upload Artwork
+            </span>
+          )}
           {/* Pay Now badge in summary row */}
           {showPayNow && (
             <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: '#F2E0D5', color: '#C4714A', whiteSpace: 'nowrap' }}>
@@ -221,13 +227,21 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage, o
         <div style={{ borderTop: '1px solid var(--cream-dark)' }}>
           <div style={{ padding: '20px 24px' }}>
             {/* Order details */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', background: 'var(--cream)', borderRadius: '12px', border: '1px solid var(--cream-dark)', padding: '16px 20px', marginBottom: '20px' }}>
-              {[['Finish', order.finish], ['Size', order.size], ['Shape', order.shape], ['Turnaround', order.turnaround]].map(([label, value]) => (
-                <div key={label}>
-                  <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--brown-light)', marginBottom: '4px' }}>{label}</div>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--brown)' }}>{value}</div>
+            <div style={{ background: 'var(--cream)', borderRadius: '12px', border: '1px solid var(--cream-dark)', padding: '16px 20px', marginBottom: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+                {[['Finish', order.finish], ['Size', order.size], ['Shape', order.shape], ['Turnaround', order.turnaround]].map(([label, value]) => (
+                  <div key={label}>
+                    <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--brown-light)', marginBottom: '4px' }}>{label}</div>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--brown)' }}>{value}</div>
+                  </div>
+                ))}
+              </div>
+              {order.notes && (
+                <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid var(--cream-dark)' }}>
+                  <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--brown-light)', marginBottom: '4px' }}>Customer Notes</div>
+                  <div style={{ fontSize: '13px', color: 'var(--brown)', lineHeight: 1.5 }}>{order.notes}</div>
                 </div>
-              ))}
+              )}
             </div>
 
             {/* Pay Now banner */}
@@ -326,6 +340,11 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage, o
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--brown)', marginBottom: '2px' }}>{proof.file_name}</div>
                       <div style={{ fontSize: '12px', color: 'var(--brown-light)' }}>Version {proof.version} · {new Date(proof.created_at).toLocaleDateString()}</div>
+                      {isStudio && proof.status === 'revision' && proof.feedback && (
+                        <div style={{ marginTop: '6px', padding: '6px 10px', background: '#FCE4E4', borderRadius: '6px', fontSize: '12px', color: '#7A3030', lineHeight: 1.4 }}>
+                          <span style={{ fontWeight: 700 }}>Revision notes: </span>{proof.feedback}
+                        </div>
+                      )}
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                       {proof.status === 'pending' ? (
@@ -452,7 +471,7 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage, o
               onClick={onMessage}
               style={{ padding: '9px 18px', borderRadius: '8px', background: 'transparent', border: '1.5px solid var(--cream-dark)', color: 'var(--brown-mid)', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
             >
-              💬 Message Studio
+              {isStudio ? '💬 Message Customer' : '💬 Message Studio'}
             </button>
             {!isStudio && ['shipped', 'delivered', 'cancelled'].includes(order.status) && onReorder && (
               <button
@@ -473,13 +492,15 @@ export function OrderCard({ order, userId, isStudio, onProofAction, onMessage, o
                 📦 Track Shipment
               </a>
             )}
-            <a
-              href={`/orders/${order.id}/invoice`}
-              onClick={(e) => e.stopPropagation()}
-              style={{ padding: '9px 18px', borderRadius: '8px', background: 'transparent', border: '1.5px solid var(--cream-dark)', color: 'var(--brown-mid)', fontSize: '13px', fontWeight: 700, cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-            >
-              🧾 View Invoice
-            </a>
+            {['paid', 'in_production', 'shipped', 'delivered'].includes(order.status) && (
+              <a
+                href={`/orders/${order.id}/invoice`}
+                onClick={(e) => e.stopPropagation()}
+                style={{ padding: '9px 18px', borderRadius: '8px', background: 'transparent', border: '1.5px solid var(--cream-dark)', color: 'var(--brown-mid)', fontSize: '13px', fontWeight: 700, cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              >
+                🧾 View Invoice
+              </a>
+            )}
           </div>
         </div>
       )}
