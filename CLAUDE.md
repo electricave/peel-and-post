@@ -177,6 +177,11 @@ These features were identified during Phase 1 development and should be addresse
 | F3 | Studio analytics dashboard | `/studio/analytics` — server-side Supabase aggregation (no HTTP self-fetch). Stat cards + pure SVG bar charts for orders/revenue over 6 months, horizontal bars for status and product breakdown. |
 | F4 | Bulk order management | Checkboxes on studio orders table with select-all (indeterminate state). Bulk actions bar: set status (parallel API calls) + Export CSV. Selected rows highlighted terracotta-pale. |
 
+## Backlog — Phase 2 Additions
+
+- [ ] **Password requirements UX** — Signup form shows no hint about what makes a valid password. When Supabase rejects a weak password, the user gets a raw error with no guidance. Fix: add inline hint text below the password field on signup ("Minimum 8 characters"), and raise the minimum from 6 → 8 in the Supabase Auth dashboard (Project Settings → Auth → Password strength). Optionally add a simple strength indicator. Do NOT enforce special character rules — modern NIST guidance (SP 800-63B) considers complexity requirements less effective than minimum length; they push users toward predictable patterns like `Password1!`.
+- [ ] **Public quote calculator** — New visitors (e.g. first-time customers comparing prices) currently hit a login wall with no way to get a price estimate. Solution: a public-facing `/quote` page with the same product/quantity/finish/size/turnaround fields as `NewOrderModal`, showing an instant price estimate with no account required. Ends with a CTA to create an account and place the order. Do NOT build full guest checkout — the proof approval, messaging, and artwork workflow all require identity and would need a parallel anonymous system.
+
 ---
 
 ## Backlog — Phase 3 (Low Priority)
