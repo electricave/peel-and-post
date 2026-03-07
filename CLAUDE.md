@@ -159,6 +159,7 @@ These features were identified during Phase 1 development and should be addresse
 - [x] **Remove redundant `+ Upload Files` button** — Removed from `ArtworkUploader.tsx` header. Drop zone handles file selection.
 - [x] **Studio proof upload UI** — Drop zone added to `OrderCard` (studio only, hidden for shipped/delivered/cancelled). Uploads to `proofs` Supabase Storage bucket then calls `POST /api/proofs`. Customer notified via in-app notification + email on upload.
 - [x] **Test email system end-to-end** — Verified working. Supabase auth emails (password reset) now route through Resend SMTP (`smtp.resend.com`, port 465, sender "Peel & Post Studio"). PKCE race condition fixed in `reset-password/page.tsx` — code is exchanged explicitly from URL params rather than relying on `onAuthStateChange` alone. Redirect URL allowlist corrected (was double-concatenated from a previous session).
+- [x] **"View Customer Portal" button in studio sidebar** — Added a styled link below the Studio nav items in `Sidebar.tsx`. Navigates to `/dashboard` so the studio owner can quickly preview the customer-facing portal experience.
 
 ---
 
