@@ -193,7 +193,7 @@ export default function LoginPage() {
             href="/quote"
             style={{ fontSize: '12px', color: '#A8896E', textDecoration: 'none', fontFamily: "'Lato', sans-serif" }}
           >
-            Just want a price? <span style={{ color: '#C4714A', fontWeight: 700 }}>Continue as guest →</span>
+            <span style={{ color: '#C4714A', fontWeight: 700 }}>Continue as guest →</span>
           </a>
         </div>
       </div>
