@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import type { Order, Proof, OrderStatus, Profile } from '@/types'
 import Sidebar from '@/components/layout/Sidebar'
 import ArtworkUploader from '@/components/orders/ArtworkUploader'
+import toast from 'react-hot-toast'
 
 type ArtworkFile = {
   order_id: string
@@ -143,6 +144,8 @@ export default function StudioDashboardClient({
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set())
   const [bulkUpdating, setBulkUpdating] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [uploadingProofFor, setUploadingProofFor] = useState<string | null>(null)
+  const [proofDragOverFor, setProofDragOverFor] = useState<string | null>(null)
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -292,6 +295,32 @@ export default function StudioDashboardClient({
     a.download = `peel-post-orders-${new Date().toISOString().slice(0, 10)}.csv`
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  async function handleProofUpload(orderId: string, files: FileList | null) {
+    if (!files || files.length === 0) return
+    const file = files[0]
+    if (file.size > 50 * 1024 * 1024) { toast.error('File exceeds 50MB limit'); return }
+    setUploadingProofFor(orderId)
+    try {
+      const ext = file.name.split('.').pop()
+      const safeName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+      const storagePath = `${orderId}/${safeName}`
+      const { error: uploadError } = await supabase.storage.from('proofs').upload(storagePath, file, { upsert: false })
+      if (uploadError) throw uploadError
+      const res = await fetch('/api/proofs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: orderId, file_url: storagePath, file_name: file.name, file_size: file.size }),
+      })
+      if (!res.ok) { const { error } = await res.json(); throw new Error(error ?? 'Failed to save proof') }
+      toast.success('Proof uploaded — customer notified')
+      router.refresh()
+    } catch (err: any) {
+      toast.error(err.message ?? 'Upload failed')
+    } finally {
+      setUploadingProofFor(null)
+    }
   }
 
   function formatDate(iso: string) {
@@ -975,9 +1004,45 @@ export default function StudioDashboardClient({
                                     textTransform: 'uppercase', color: 'var(--brown-light)',
                                     marginBottom: 12, marginTop: 0,
                                   }}>Proofs</p>
+                                  {/* Upload dropzone */}
+                                  {!['shipped', 'delivered', 'cancelled'].includes(order.status) && (
+                                    <div
+                                      onDragOver={e => { e.preventDefault(); setProofDragOverFor(order.id) }}
+                                      onDragLeave={() => setProofDragOverFor(null)}
+                                      onDrop={e => { e.preventDefault(); setProofDragOverFor(null); handleProofUpload(order.id, e.dataTransfer.files) }}
+                                      onClick={() => !uploadingProofFor && (document.getElementById(`proof-input-${order.id}`) as HTMLInputElement)?.click()}
+                                      style={{
+                                        border: `2px dashed ${proofDragOverFor === order.id ? 'var(--terracotta)' : 'var(--cream-dark)'}`,
+                                        borderRadius: 10, padding: '14px 12px', textAlign: 'center',
+                                        cursor: uploadingProofFor ? 'default' : 'pointer',
+                                        background: proofDragOverFor === order.id ? 'var(--terracotta-pale)' : 'var(--cream)',
+                                        transition: 'all 0.2s', marginBottom: 12,
+                                      }}
+                                    >
+                                      {uploadingProofFor === order.id ? (
+                                        <p style={{ margin: 0, fontSize: 12, color: 'var(--brown-light)' }}>⏳ Uploading…</p>
+                                      ) : (
+                                        <>
+                                          <p style={{ margin: 0, fontSize: 12, color: 'var(--brown-light)' }}>
+                                            🖼 Drop proof or <span style={{ color: 'var(--terracotta)', fontWeight: 700 }}>browse</span>
+                                          </p>
+                                          <p style={{ margin: '3px 0 0', fontSize: 11, color: 'var(--brown-light)' }}>
+                                            PNG, JPG, PDF, AI · Max 50MB
+                                          </p>
+                                        </>
+                                      )}
+                                    </div>
+                                  )}
+                                  <input
+                                    id={`proof-input-${order.id}`}
+                                    type="file"
+                                    accept=".png,.jpg,.jpeg,.pdf,.ai,.eps,.svg"
+                                    style={{ display: 'none' }}
+                                    onChange={e => handleProofUpload(order.id, e.target.files)}
+                                  />
+
                                   {orderProofs.length === 0 ? (
-                                    <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--brown-light)', fontSize: 13 }}>
-                                      <div style={{ fontSize: 24, marginBottom: 8 }}>📄</div>
+                                    <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--brown-light)', fontSize: 13 }}>
                                       No proofs sent yet
                                     </div>
                                   ) : (
