@@ -142,6 +142,7 @@ export default function StudioDashboardClient({
   const [statusDropdownOpen, setStatusDropdownOpen] = useState<string | null>(null)
   const [trackingModal, setTrackingModal] = useState<{ orderId: string } | null>(null)
   const [trackingInput, setTrackingInput] = useState('')
+  const [manageMode, setManageMode] = useState(false)
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set())
   const [bulkUpdating, setBulkUpdating] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -509,11 +510,29 @@ export default function StudioDashboardClient({
         {/* Table toolbar */}
         <div style={{ padding: '20px 24px 0', borderBottom: '1px solid var(--cream-dark)' }}>
 
-          {/* Top row: title + search */}
+          {/* Top row: title + manage button + search */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, gap: 16 }}>
-            <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 18, fontWeight: 600, color: 'var(--brown)', margin: 0 }}>
-              All Orders
-            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 18, fontWeight: 600, color: 'var(--brown)', margin: 0 }}>
+                All Orders
+              </h2>
+              <button
+                onClick={() => {
+                  setManageMode(m => !m)
+                  setSelectedOrders(new Set())
+                }}
+                style={{
+                  padding: '5px 14px', borderRadius: 8,
+                  border: `1.5px solid ${manageMode ? 'var(--terracotta)' : 'var(--cream-dark)'}`,
+                  background: manageMode ? 'var(--terracotta-pale)' : 'transparent',
+                  color: manageMode ? 'var(--terracotta)' : 'var(--brown-light)',
+                  fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                  fontFamily: 'Lato, sans-serif', transition: 'all 0.15s',
+                }}
+              >
+                {manageMode ? '✕ Done' : 'Manage Orders'}
+              </button>
+            </div>
             <div style={{ position: 'relative' }}>
               <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--brown-light)', fontSize: 14, pointerEvents: 'none' }}>🔍</span>
               <input
@@ -654,7 +673,7 @@ export default function StudioDashboardClient({
         </div>
 
         {/* Bulk actions bar */}
-        {selectedOrders.size > 0 && (
+        {manageMode && selectedOrders.size > 0 && (
           <div style={{
             padding: '12px 24px',
             background: 'var(--brown)',
@@ -724,15 +743,17 @@ export default function StudioDashboardClient({
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, fontFamily: 'Lato, sans-serif' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--cream-dark)' }}>
-                <th style={{ padding: '12px 16px', background: 'var(--cream)', width: 40 }}>
-                  <input
-                    type="checkbox"
-                    checked={filtered.length > 0 && selectedOrders.size === filtered.length}
-                    ref={el => { if (el) el.indeterminate = selectedOrders.size > 0 && selectedOrders.size < filtered.length }}
-                    onChange={toggleSelectAll}
-                    style={{ cursor: 'pointer', width: 15, height: 15, accentColor: 'var(--terracotta)' }}
-                  />
-                </th>
+                {manageMode && (
+                  <th style={{ padding: '12px 16px', background: 'var(--cream)', width: 40 }}>
+                    <input
+                      type="checkbox"
+                      checked={filtered.length > 0 && selectedOrders.size === filtered.length}
+                      ref={el => { if (el) el.indeterminate = selectedOrders.size > 0 && selectedOrders.size < filtered.length }}
+                      onChange={toggleSelectAll}
+                      style={{ cursor: 'pointer', width: 15, height: 15, accentColor: 'var(--terracotta)' }}
+                    />
+                  </th>
+                )}
                 {['#', 'Customer', 'Product', 'Qty', 'Finish / Shape', 'Total', 'Status', 'Proof'].map(h => (
                   <th key={h} style={{
                     padding: '12px 16px', textAlign: 'left',
@@ -748,7 +769,7 @@ export default function StudioDashboardClient({
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={9} style={{
+                  <td colSpan={manageMode ? 9 : 8} style={{
                     padding: '48px 24px', textAlign: 'center',
                     color: 'var(--brown-light)', fontSize: 14,
                   }}>
@@ -773,7 +794,7 @@ export default function StudioDashboardClient({
                         style={{
                           borderBottom: '1px solid var(--cream-dark)',
                           background: selectedOrders.has(order.id)
-                            ? '#C4845C'
+                            ? '#D9B8A3'
                             : isExpanded
                             ? 'var(--terracotta-pale)'
                             : idx % 2 === 0 ? 'var(--white)' : 'rgba(247,243,238,0.4)',
@@ -783,22 +804,24 @@ export default function StudioDashboardClient({
                         onMouseEnter={e => { if (!selectedOrders.has(order.id) && !isExpanded) e.currentTarget.style.background = 'var(--terracotta-pale)' }}
                         onMouseLeave={e => { if (!selectedOrders.has(order.id)) e.currentTarget.style.background = isExpanded ? 'var(--terracotta-pale)' : idx % 2 === 0 ? 'var(--white)' : 'rgba(247,243,238,0.4)' }}
                       >
-                        {/* Checkbox */}
-                        <td
-                          style={{
-                            padding: '14px 16px',
-                            borderLeft: selectedOrders.has(order.id) ? '3px solid var(--terracotta)' : '3px solid transparent',
-                            transition: 'border-color 0.15s',
-                          }}
-                          onClick={e => e.stopPropagation()}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedOrders.has(order.id)}
-                            onChange={() => toggleSelectOrder(order.id)}
-                            style={{ cursor: 'pointer', width: 15, height: 15, accentColor: 'var(--terracotta)' }}
-                          />
-                        </td>
+                        {/* Checkbox — only visible in manage mode */}
+                        {manageMode && (
+                          <td
+                            style={{
+                              padding: '14px 16px',
+                              borderLeft: selectedOrders.has(order.id) ? '3px solid var(--terracotta)' : '3px solid transparent',
+                              transition: 'border-color 0.15s',
+                            }}
+                            onClick={e => e.stopPropagation()}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedOrders.has(order.id)}
+                              onChange={() => toggleSelectOrder(order.id)}
+                              style={{ cursor: 'pointer', width: 15, height: 15, accentColor: 'var(--terracotta)' }}
+                            />
+                          </td>
+                        )}
 
                         {/* Order number */}
                         <td style={{ padding: '14px 16px' }}>
@@ -939,7 +962,7 @@ export default function StudioDashboardClient({
                       {/* ── Expanded detail row ─────────────────────── */}
                       {isExpanded && (
                         <tr key={`${order.id}-expanded`}>
-                          <td colSpan={9} style={{ padding: 0, background: 'var(--cream)' }}>
+                          <td colSpan={manageMode ? 9 : 8} style={{ padding: 0, background: 'var(--cream)' }}>
                             <div style={{
                               padding: '20px 24px',
                               borderBottom: '1px solid var(--cream-dark)',
