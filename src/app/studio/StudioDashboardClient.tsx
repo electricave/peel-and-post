@@ -470,6 +470,9 @@ export default function StudioDashboardClient({
                 <StatusBadge status={order.status} />
                 <button
                   onClick={() => {
+                    const isPast = PAST_STATUSES.includes(order.status)
+                    switchTab(isPast ? 'past' : 'current')
+                    setStatusFilter('all')
                     setExpandedOrder(order.id)
                     setTimeout(() => {
                       document.getElementById(`order-row-${order.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
