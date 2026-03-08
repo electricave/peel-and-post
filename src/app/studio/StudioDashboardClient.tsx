@@ -734,7 +734,7 @@ export default function StudioDashboardClient({
                     style={{ cursor: 'pointer', width: 15, height: 15, accentColor: 'var(--terracotta)' }}
                   />
                 </th>
-                {['#', 'Customer', 'Product', 'Qty', 'Finish / Shape', 'Total', 'Status', 'Proof', 'Actions'].map(h => (
+                {['#', 'Customer', 'Product', 'Qty', 'Finish / Shape', 'Total', 'Status', 'Proof'].map(h => (
                   <th key={h} style={{
                     padding: '12px 16px', textAlign: 'left',
                     fontSize: 10, fontWeight: 700, letterSpacing: '0.14em',
@@ -749,7 +749,7 @@ export default function StudioDashboardClient({
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={10} style={{
+                  <td colSpan={9} style={{
                     padding: '48px 24px', textAlign: 'center',
                     color: 'var(--brown-light)', fontSize: 14,
                   }}>
@@ -926,35 +926,12 @@ export default function StudioDashboardClient({
                           )}
                         </td>
 
-                        {/* Actions */}
-                        <td style={{ padding: '14px 16px' }} onClick={e => e.stopPropagation()}>
-                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                            <button
-                              onClick={e => { e.stopPropagation(); router.push(`/messages?order=${order.id}`) }}
-                              style={{
-                                background: 'none', border: '1px solid var(--cream-dark)',
-                                borderRadius: 8, padding: '6px 10px',
-                                fontSize: 13, cursor: 'pointer', color: 'var(--brown-light)',
-                              }}
-                              title="Message customer"
-                            >
-                              💬
-                            </button>
-                            <span style={{
-                              fontSize: 10, color: 'var(--brown-light)',
-                              display: 'inline-block',
-                              transition: 'transform 0.2s',
-                              transform: isExpanded ? 'rotate(180deg)' : 'none',
-                              paddingRight: 4,
-                            }}>▼</span>
-                          </div>
-                        </td>
                       </tr>
 
                       {/* ── Expanded detail row ─────────────────────── */}
                       {isExpanded && (
                         <tr key={`${order.id}-expanded`}>
-                          <td colSpan={10} style={{ padding: 0, background: 'var(--cream)' }}>
+                          <td colSpan={9} style={{ padding: 0, background: 'var(--cream)' }}>
                             <div style={{
                               padding: '20px 24px',
                               borderBottom: '1px solid var(--cream-dark)',
