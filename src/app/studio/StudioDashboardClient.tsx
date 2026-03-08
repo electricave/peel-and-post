@@ -425,7 +425,12 @@ export default function StudioDashboardClient({
                 </div>
                 <StatusBadge status={order.status} />
                 <button
-                  onClick={() => setExpandedOrder(order.id)}
+                  onClick={() => {
+                    setExpandedOrder(order.id)
+                    setTimeout(() => {
+                      document.getElementById(`order-row-${order.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                    }, 50)
+                  }}
                   style={{
                     background: 'var(--terracotta)', color: 'white',
                     border: 'none', borderRadius: 8,
@@ -712,6 +717,7 @@ export default function StudioDashboardClient({
                     <>
                       <tr
                         key={order.id}
+                        id={`order-row-${order.id}`}
                         onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
                         style={{
                           borderBottom: '1px solid var(--cream-dark)',
