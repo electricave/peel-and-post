@@ -133,6 +133,7 @@ export default function StudioDashboardClient({
   const supabase = createClient()
 
   const [orders, setOrders] = useState<Order[]>(initialOrders)
+  const [localProofs, setLocalProofs] = useState<Proof[]>(proofs)
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState<'current' | 'past'>('current')
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all')
@@ -147,7 +148,6 @@ export default function StudioDashboardClient({
   const [uploadingProofFor, setUploadingProofFor] = useState<string | null>(null)
   const [proofDragOverFor, setProofDragOverFor] = useState<string | null>(null)
   const [deletingProof, setDeletingProof] = useState<string | null>(null)
-  const [deletedProofIds, setDeletedProofIds] = useState<Set<string>>(new Set())
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -304,10 +304,8 @@ export default function StudioDashboardClient({
     try {
       const res = await fetch(`/api/proofs?proof_id=${proofId}`, { method: 'DELETE' })
       if (!res.ok) throw new Error()
-      // Optimistically remove from view immediately
-      setDeletedProofIds(prev => new Set(Array.from(prev).concat(proofId)))
+      setLocalProofs(prev => prev.filter(p => p.id !== proofId))
       toast.success('Proof deleted')
-      router.refresh()
     } catch {
       toast.error('Could not delete proof')
     } finally {
@@ -332,8 +330,9 @@ export default function StudioDashboardClient({
         body: JSON.stringify({ order_id: orderId, file_url: storagePath, file_name: file.name, file_size: file.size }),
       })
       if (!res.ok) { const { error } = await res.json(); throw new Error(error ?? 'Failed to save proof') }
+      const { data: newProof } = await res.json()
+      if (newProof) setLocalProofs(prev => [newProof, ...prev])
       toast.success('Proof uploaded — customer notified')
-      router.refresh()
     } catch (err: any) {
       toast.error(err.message ?? 'Upload failed')
     } finally {
@@ -351,8 +350,8 @@ export default function StudioDashboardClient({
   }
 
   function getOrderProofs(orderId: string) {
-    return proofs
-      .filter(p => p.order_id === orderId && !deletedProofIds.has(p.id))
+    return localProofs
+      .filter(p => p.order_id === orderId)
       .sort((a, b) => b.version - a.version)
   }
 
