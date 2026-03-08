@@ -179,8 +179,8 @@ These features were identified during Phase 1 development and should be addresse
 
 ## Backlog — Phase 2 Additions
 
-- [ ] **Password requirements UX** — Signup form shows no hint about what makes a valid password. When Supabase rejects a weak password, the user gets a raw error with no guidance. Fix: add inline hint text below the password field on signup ("Minimum 8 characters"), and raise the minimum from 6 → 8 in the Supabase Auth dashboard (Project Settings → Auth → Password strength). Optionally add a simple strength indicator. Do NOT enforce special character rules — modern NIST guidance (SP 800-63B) considers complexity requirements less effective than minimum length; they push users toward predictable patterns like `Password1!`.
-- [ ] **Public quote calculator** — New visitors (e.g. first-time customers comparing prices) currently hit a login wall with no way to get a price estimate. Solution: a public-facing `/quote` page with the same product/quantity/finish/size/turnaround fields as `NewOrderModal`, showing an instant price estimate with no account required. Ends with a CTA to create an account and place the order. Do NOT build full guest checkout — the proof approval, messaging, and artwork workflow all require identity and would need a parallel anonymous system.
+- [x] **Password requirements UX** — Added "Minimum 8 characters." hint below password field on signup form (`/auth/login/page.tsx`). Also raise the minimum from 6 → 8 in Supabase Auth dashboard (Project Settings → Auth → Password strength) — this is a manual dashboard step.
+- [x] **Guest quote flow** — "Continue as guest →" link on login page. Public `/quote` page (middleware whitelisted) runs the full 7-step order builder without auth. On step 7, guest clicks "Create account & place order" — order state is saved to `sessionStorage` and they're redirected to `/auth/login`. After login/signup, `DashboardClient` detects the pending order, auto-submits it via `/api/orders`, and shows a success toast.
 
 ---
 

@@ -134,6 +134,20 @@ export interface Notification {
   created_at: string
 }
 
+export interface OrderTemplate {
+  id: string
+  customer_id: string
+  name: string
+  product: string
+  quantity: string
+  finish: string
+  size: string
+  shape: string
+  turnaround: string
+  notes: string | null
+  created_at: string
+}
+
 // ============================================================
 // Form / UI types
 // ============================================================

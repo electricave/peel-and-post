@@ -145,6 +145,11 @@ export default function LoginPage() {
                 boxSizing: 'border-box',
               }}
             />
+            {mode === 'signup' && (
+              <p style={{ margin: 0, fontSize: '11px', color: '#A8896E', fontFamily: "'Lato', sans-serif" }}>
+                Minimum 8 characters.
+              </p>
+            )}
           </div>
 
           <button
@@ -177,6 +182,15 @@ export default function LoginPage() {
             {mode === 'login' ? 'Create one' : 'Sign in'}
           </button>
         </p>
+
+        <div style={{ borderTop: '1px solid #EDE7DC', marginTop: '20px', paddingTop: '20px', textAlign: 'center' }}>
+          <a
+            href="/quote"
+            style={{ fontSize: '12px', color: '#A8896E', textDecoration: 'none', fontFamily: "'Lato', sans-serif" }}
+          >
+            Just want a price? <span style={{ color: '#C4714A', fontWeight: 700 }}>Continue as guest →</span>
+          </a>
+        </div>
       </div>
     </div>
   )

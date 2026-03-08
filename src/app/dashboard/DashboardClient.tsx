@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/layout/Sidebar'
 import Topbar from '@/components/layout/Topbar'
 import NewOrderModal from '@/components/orders/NewOrderModal'
+import toast from 'react-hot-toast'
 import type { Profile, Order } from '@/types'
 
 export default function DashboardClient({ profile, orders, stats }: {
@@ -14,6 +15,28 @@ export default function DashboardClient({ profile, orders, stats }: {
 }) {
   const [orderModalOpen, setOrderModalOpen] = useState(false)
   const router = useRouter()
+
+  // Auto-submit any order saved by the guest quote flow
+  useEffect(() => {
+    const raw = sessionStorage.getItem('pendingOrder')
+    if (!raw) return
+    sessionStorage.removeItem('pendingOrder')
+
+    let pending: Record<string, unknown>
+    try { pending = JSON.parse(raw) } catch { return }
+
+    fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(pending),
+    })
+      .then(async res => {
+        if (!res.ok) throw new Error()
+        toast.success('🎉 Your order has been placed!')
+        router.refresh()
+      })
+      .catch(() => toast.error('Could not place your order. Please try again from your dashboard.'))
+  }, [])
 
   // Most recent active order for the timeline
   const featuredOrder = orders[0]
