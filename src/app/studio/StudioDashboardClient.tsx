@@ -305,7 +305,7 @@ export default function StudioDashboardClient({
       const res = await fetch(`/api/proofs?proof_id=${proofId}`, { method: 'DELETE' })
       if (!res.ok) throw new Error()
       // Optimistically remove from view immediately
-      setDeletedProofIds(prev => new Set([...prev, proofId]))
+      setDeletedProofIds(prev => new Set(Array.from(prev).concat(proofId)))
       toast.success('Proof deleted')
       router.refresh()
     } catch {
