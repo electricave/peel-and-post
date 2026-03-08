@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { sendStatusEmail } from '@/lib/email'
 
@@ -107,7 +106,6 @@ export async function PATCH(request: NextRequest) {
 
 // DELETE /api/proofs?proof_id=xxx — studio only, deletes proof record + storage file
 export async function DELETE(request: NextRequest) {
-  // Auth check via user client
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -118,20 +116,16 @@ export async function DELETE(request: NextRequest) {
   const proofId = new URL(request.url).searchParams.get('proof_id')
   if (!proofId) return NextResponse.json({ error: 'proof_id required' }, { status: 400 })
 
-  // Use admin client to bypass RLS for the actual deletions
-  const admin = createAdminClient()
-
-  const { data: proof, error: fetchError } = await admin
+  const { data: proof, error: fetchError } = await supabase
     .from('proofs').select('file_url').eq('id', proofId).single()
   if (fetchError || !proof) return NextResponse.json({ error: 'Proof not found' }, { status: 404 })
 
   // Remove from storage
-  const { error: storageError } = await admin.storage.from('proofs').remove([proof.file_url])
-  if (storageError) console.error('Storage delete error:', storageError.message)
+  await supabase.storage.from('proofs').remove([proof.file_url])
 
   // Delete DB record
-  const { error: dbError } = await admin.from('proofs').delete().eq('id', proofId)
-  if (dbError) return NextResponse.json({ error: dbError.message }, { status: 500 })
+  const { error } = await supabase.from('proofs').delete().eq('id', proofId)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ success: true })
 }
