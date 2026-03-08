@@ -774,12 +774,14 @@ export default function StudioDashboardClient({
                           borderBottom: '1px solid var(--cream-dark)',
                           background: selectedOrders.has(order.id)
                             ? '#C4845C'
+                            : isExpanded
+                            ? 'var(--terracotta-pale)'
                             : idx % 2 === 0 ? 'var(--white)' : 'rgba(247,243,238,0.4)',
                           transition: 'background 0.15s',
                           cursor: 'pointer',
                         }}
-                        onMouseEnter={e => { if (!selectedOrders.has(order.id)) e.currentTarget.style.background = 'var(--terracotta-pale)' }}
-                        onMouseLeave={e => { if (!selectedOrders.has(order.id)) e.currentTarget.style.background = idx % 2 === 0 ? 'var(--white)' : 'rgba(247,243,238,0.4)' }}
+                        onMouseEnter={e => { if (!selectedOrders.has(order.id) && !isExpanded) e.currentTarget.style.background = 'var(--terracotta-pale)' }}
+                        onMouseLeave={e => { if (!selectedOrders.has(order.id)) e.currentTarget.style.background = isExpanded ? 'var(--terracotta-pale)' : idx % 2 === 0 ? 'var(--white)' : 'rgba(247,243,238,0.4)' }}
                       >
                         {/* Checkbox */}
                         <td
