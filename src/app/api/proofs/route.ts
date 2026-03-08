@@ -104,6 +104,32 @@ export async function PATCH(request: NextRequest) {
   return NextResponse.json({ success: true })
 }
 
+// DELETE /api/proofs?proof_id=xxx — studio only, deletes proof record + storage file
+export async function DELETE(request: NextRequest) {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  if (profile?.role !== 'studio') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const proofId = new URL(request.url).searchParams.get('proof_id')
+  if (!proofId) return NextResponse.json({ error: 'proof_id required' }, { status: 400 })
+
+  const { data: proof, error: fetchError } = await supabase
+    .from('proofs').select('file_url').eq('id', proofId).single()
+  if (fetchError || !proof) return NextResponse.json({ error: 'Proof not found' }, { status: 404 })
+
+  // Remove from storage
+  await supabase.storage.from('proofs').remove([proof.file_url])
+
+  // Delete DB record
+  const { error } = await supabase.from('proofs').delete().eq('id', proofId)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  return NextResponse.json({ success: true })
+}
+
 // POST /api/proofs — studio uploads a new proof, triggers proof_sent email to customer
 export async function POST(request: NextRequest) {
   const supabase = createClient()

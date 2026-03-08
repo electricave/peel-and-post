@@ -14,6 +14,31 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'order_id, file_name, and file_path required' }, { status: 400 })
   }
 
+  // ── Rate limiting ──────────────────────────────────────────
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+
+  // 30 uploads per day per user
+  const { count: dailyCount } = await supabase
+    .from('artwork_files')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .gte('created_at', todayStart.toISOString())
+
+  if ((dailyCount ?? 0) >= 30) {
+    return NextResponse.json({ error: 'Daily upload limit reached (30 files per day). Please try again tomorrow.' }, { status: 429 })
+  }
+
+  // 20 uploads per order
+  const { count: orderCount } = await supabase
+    .from('artwork_files')
+    .select('*', { count: 'exact', head: true })
+    .eq('order_id', order_id)
+
+  if ((orderCount ?? 0) >= 20) {
+    return NextResponse.json({ error: 'This order has reached the maximum of 20 artwork files.' }, { status: 429 })
+  }
+
   // Insert artwork_files record
   const { data: record, error: dbError } = await supabase
     .from('artwork_files')

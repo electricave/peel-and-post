@@ -146,6 +146,7 @@ export default function StudioDashboardClient({
   const [mounted, setMounted] = useState(false)
   const [uploadingProofFor, setUploadingProofFor] = useState<string | null>(null)
   const [proofDragOverFor, setProofDragOverFor] = useState<string | null>(null)
+  const [deletingProof, setDeletingProof] = useState<string | null>(null)
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -295,6 +296,20 @@ export default function StudioDashboardClient({
     a.download = `peel-post-orders-${new Date().toISOString().slice(0, 10)}.csv`
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  async function handleDeleteProof(proofId: string) {
+    setDeletingProof(proofId)
+    try {
+      const res = await fetch(`/api/proofs?proof_id=${proofId}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error()
+      toast.success('Proof deleted')
+      router.refresh()
+    } catch {
+      toast.error('Could not delete proof')
+    } finally {
+      setDeletingProof(null)
+    }
   }
 
   async function handleProofUpload(orderId: string, files: FileList | null) {
@@ -1058,15 +1073,31 @@ export default function StudioDashboardClient({
                                             >
                                               📄 {p.file_name || `Proof v${p.version}`}
                                             </a>
-                                            <span style={{
-                                              fontSize: 10, fontWeight: 700,
-                                              textTransform: 'uppercase', letterSpacing: '0.06em',
-                                              color: p.status === 'approved' ? 'var(--sage)'
-                                                : p.status === 'revision' ? 'var(--terracotta)'
-                                                : 'var(--gold)',
-                                            }}>
-                                              {p.status}
-                                            </span>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                              <span style={{
+                                                fontSize: 10, fontWeight: 700,
+                                                textTransform: 'uppercase', letterSpacing: '0.06em',
+                                                color: p.status === 'approved' ? 'var(--sage)'
+                                                  : p.status === 'revision' ? 'var(--terracotta)'
+                                                  : 'var(--gold)',
+                                              }}>
+                                                {p.status}
+                                              </span>
+                                              <button
+                                                onClick={() => handleDeleteProof(p.id)}
+                                                disabled={deletingProof === p.id}
+                                                title="Delete proof"
+                                                style={{
+                                                  background: 'none', border: 'none',
+                                                  cursor: deletingProof === p.id ? 'default' : 'pointer',
+                                                  color: deletingProof === p.id ? 'var(--cream-dark)' : '#C05050',
+                                                  fontSize: 13, lineHeight: 1, padding: '2px 4px',
+                                                  borderRadius: 4,
+                                                }}
+                                              >
+                                                ✕
+                                              </button>
+                                            </div>
                                           </div>
                                           {p.feedback && (
                                             <div style={{
