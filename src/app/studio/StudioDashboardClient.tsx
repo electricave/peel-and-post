@@ -773,7 +773,7 @@ export default function StudioDashboardClient({
                         style={{
                           borderBottom: '1px solid var(--cream-dark)',
                           background: selectedOrders.has(order.id)
-                            ? 'var(--terracotta-pale)'
+                            ? '#D9B8A3'
                             : idx % 2 === 0 ? 'var(--white)' : 'rgba(247,243,238,0.4)',
                           transition: 'background 0.15s',
                           cursor: 'pointer',
