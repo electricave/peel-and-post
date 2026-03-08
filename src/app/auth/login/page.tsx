@@ -26,6 +26,11 @@ export default function LoginPage() {
         const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single()
         window.location.href = profile?.role === 'studio' ? '/studio' : '/dashboard'
       } else {
+        if (password.length < 8) {
+          toast.error('Password must be at least 8 characters.')
+          setLoading(false)
+          return
+        }
         const { error } = await supabase.auth.signUp({
           email,
           password,
