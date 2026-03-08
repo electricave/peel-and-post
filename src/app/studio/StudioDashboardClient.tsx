@@ -147,6 +147,7 @@ export default function StudioDashboardClient({
   const [uploadingProofFor, setUploadingProofFor] = useState<string | null>(null)
   const [proofDragOverFor, setProofDragOverFor] = useState<string | null>(null)
   const [deletingProof, setDeletingProof] = useState<string | null>(null)
+  const [deletedProofIds, setDeletedProofIds] = useState<Set<string>>(new Set())
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -303,6 +304,8 @@ export default function StudioDashboardClient({
     try {
       const res = await fetch(`/api/proofs?proof_id=${proofId}`, { method: 'DELETE' })
       if (!res.ok) throw new Error()
+      // Optimistically remove from view immediately
+      setDeletedProofIds(prev => new Set([...prev, proofId]))
       toast.success('Proof deleted')
       router.refresh()
     } catch {
@@ -348,7 +351,9 @@ export default function StudioDashboardClient({
   }
 
   function getOrderProofs(orderId: string) {
-    return proofs.filter(p => p.order_id === orderId).sort((a, b) => b.version - a.version)
+    return proofs
+      .filter(p => p.order_id === orderId && !deletedProofIds.has(p.id))
+      .sort((a, b) => b.version - a.version)
   }
 
   function getOrderConversation(orderId: string) {
