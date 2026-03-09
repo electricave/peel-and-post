@@ -824,7 +824,11 @@ export default function StudioDashboardClient({
                         )}
 
                         {/* Order number */}
-                        <td style={{ padding: '14px 16px' }}>
+                        <td style={{
+                          padding: '14px 16px',
+                          borderLeft: isExpanded ? '3px solid var(--terracotta)' : '3px solid transparent',
+                          transition: 'border-color 0.15s',
+                        }}>
                           <span style={{ fontWeight: 700, color: 'var(--brown)', fontSize: 13 }}>
                             #{order.order_number}
                           </span>
